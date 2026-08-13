@@ -19,6 +19,14 @@ TAILMON ZER0 was created to explicitly support Asuswrt-Merlin routers running **
 
 ---
 
+### Changelog
+**v0.2.1 (Beta-to-Main Merge)**
+- **SIGBUS Crash Fix:** Injected `GODEBUG=tlsmlkem=0` to prevent fatal memory alignment crashes on 32-bit ARM routers running Go 1.24+.
+- **Watchdog Race Fix:** Changed keepalive logic to monitor process PID rather than socket status, eliminating false-positive reboot loops during initialization.
+- **Architectural Rewrite:** Transitioned the monolithic 4,500-line script into a maintainable modular `src/` component system, and fixed 0-second UI screen flashing.
+
+---
+
 ### Installation
 To install TAILMON ZER0 via SSH on your Asuswrt-Merlin router, simply run:
 ```sh
