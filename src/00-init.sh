@@ -21,7 +21,7 @@ unset LD_LIBRARY_PATH
 export SCREENDIR="${HOME}/.screen"
 
 #Static Variables - please do not change
-version="0.2.0"
+version="0.2.1"
 beta=0                                                               # Beta indicator on/off
 track=0                                                              # Stable (0) / Beta (1) Track subscription
 apppath="/jffs/scripts/tailmon-zero.sh"                                   # Static path to the app

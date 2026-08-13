@@ -1,4 +1,4 @@
-# TAILMON ZER0 v0.2.0
+# TAILMON ZER0 v0.2.1
 Asus-Merlin Tailscale Installer, Configurator and Monitor (Swapless Edition)
 
 ---

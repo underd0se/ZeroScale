@@ -21,7 +21,7 @@ unset LD_LIBRARY_PATH
 export SCREENDIR="${HOME}/.screen"
 
 #Static Variables - please do not change
-version="0.2.0"
+version="0.2.1"
 beta=0                                                               # Beta indicator on/off
 track=0                                                              # Stable (0) / Beta (1) Track subscription
 apppath="/jffs/scripts/tailmon-zero.sh"                                   # Static path to the app
@@ -2373,6 +2373,7 @@ inject_s06tailscaled()
     sed -i '/export GOMAXPROCS=1/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/export GOMEMLIMIT=20MiB/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/export GOGC=20/d' "/opt/etc/init.d/S06tailscaled"
+    sed -i '/export GODEBUG=tlsmlkem=0/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/swap_total=$(free/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/swap_total=\$(free/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/if \[ "\$swap_total" = "0" \]; then/d' "/opt/etc/init.d/S06tailscaled"
@@ -2385,6 +2386,7 @@ inject_s06tailscaled()
     # Inject new logic
     awk -v old_oc="$old_overcommit" 'NR==2{
       print "# TAILMON ZER0: Dynamic Swapless Block Start"
+      print "export GODEBUG=tlsmlkem=0"
       print "swap_total=$(free | awk '"'"'/^Swap:/ {print $2}'"'"')"
       print "if [ \"$swap_total\" = \"0\" ]; then"
       print "    export GOMAXPROCS=1"
@@ -4590,7 +4592,7 @@ while true; do
   #Determine if Tailscale service is down
   if [ "$tsinstalled" -eq 1 ] &&
      [ "$keepalive" -eq 1 ] &&
-     [ "$tsstatus" -ne 0 ]; then
+     [ "$tsservice" -ne 0 ]; then
 
     printf "\33[2K\r"
     printf "${CGreen}\r[Tailscale Status producing errors...Restarting services]"

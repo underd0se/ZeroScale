@@ -1083,6 +1083,7 @@ inject_s06tailscaled()
     sed -i '/export GOMAXPROCS=1/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/export GOMEMLIMIT=20MiB/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/export GOGC=20/d' "/opt/etc/init.d/S06tailscaled"
+    sed -i '/export GODEBUG=tlsmlkem=0/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/swap_total=$(free/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/swap_total=\$(free/d' "/opt/etc/init.d/S06tailscaled"
     sed -i '/if \[ "\$swap_total" = "0" \]; then/d' "/opt/etc/init.d/S06tailscaled"
@@ -1095,6 +1096,7 @@ inject_s06tailscaled()
     # Inject new logic
     awk -v old_oc="$old_overcommit" 'NR==2{
       print "# TAILMON ZER0: Dynamic Swapless Block Start"
+      print "export GODEBUG=tlsmlkem=0"
       print "swap_total=$(free | awk '"'"'/^Swap:/ {print $2}'"'"')"
       print "if [ \"$swap_total\" = \"0\" ]; then"
       print "    export GOMAXPROCS=1"

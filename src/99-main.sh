@@ -647,7 +647,7 @@ while true; do
   #Determine if Tailscale service is down
   if [ "$tsinstalled" -eq 1 ] &&
      [ "$keepalive" -eq 1 ] &&
-     [ "$tsstatus" -ne 0 ]; then
+     [ "$tsservice" -ne 0 ]; then
 
     printf "\33[2K\r"
     printf "${CGreen}\r[Tailscale Status producing errors...Restarting services]"
