@@ -17,18 +17,18 @@ applykernelmode()
   if [ -f /jffs/scripts/firewall-start ]; then
 
     if ! grep -q -F "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi" /jffs/scripts/firewall-start; then
-      echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by TAILMON ZER0" >> /jffs/scripts/firewall-start
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: firewall-start entries created." >> "$logfile"
+      echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by ZeroScale" >> /jffs/scripts/firewall-start
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: firewall-start entries created." >> "$logfile"
     fi
 
   else
     echo "#!/bin/sh" > /jffs/scripts/firewall-start
     echo "" >> /jffs/scripts/firewall-start
-    echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by TAILMON ZER0" >> /jffs/scripts/firewall-start
+    echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by ZeroScale" >> /jffs/scripts/firewall-start
     chmod 0755 /jffs/scripts/firewall-start
   fi
   inject_s06tailscaled
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Kernel Mode settings have been applied." >> "$logfile"
+  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Kernel Mode settings have been applied." >> "$logfile"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -51,14 +51,14 @@ applycustommode()
   if [ -f /jffs/scripts/firewall-start ]; then
 
     if ! grep -q -F "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi" /jffs/scripts/firewall-start; then
-      echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by TAILMON ZER0" >> /jffs/scripts/firewall-start
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: firewall-start entries created." >> "$logfile"
+      echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by ZeroScale" >> /jffs/scripts/firewall-start
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: firewall-start entries created." >> "$logfile"
     fi
 
   else
     echo "#!/bin/sh" > /jffs/scripts/firewall-start
     echo "" >> /jffs/scripts/firewall-start
-    echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by TAILMON ZER0" >> /jffs/scripts/firewall-start
+    echo "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi # Added by ZeroScale" >> /jffs/scripts/firewall-start
     chmod 0755 /jffs/scripts/firewall-start
   fi
 
@@ -68,7 +68,7 @@ applycustommode()
   saveconfig
 
   inject_s06tailscaled
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Custom Mode settings have been applied." >> "$logfile"
+  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Custom Mode settings have been applied." >> "$logfile"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ applycustomchanges()
   timer=$timerloop
   restartts=1
 
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Custom Mode changes have been applied." >> "$logfile"
+  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Custom Mode changes have been applied." >> "$logfile"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -125,10 +125,10 @@ exitnodets()
   if promptyn "[y/n]: "
     then
       exitnode=1
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Device has been configured as Exit Node." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Device has been configured as Exit Node." >> "$logfile"
     else
       exitnode=0
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Exit Node configuration has been disabled." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Exit Node configuration has been disabled." >> "$logfile"
   fi
   saveconfig
   timer=$timerloop
@@ -208,11 +208,11 @@ advroutests()
         routes=$routeinput
       fi
       advroutes=1
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Advertised routes enabled with routes=$routes." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Advertised routes enabled with routes=$routes." >> "$logfile"
   else
     advroutes=0
     routes=""
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Advertised routes disabled." >> "$logfile"
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Advertised routes disabled." >> "$logfile"
   fi
   saveconfig
   timer=$timerloop
@@ -263,10 +263,10 @@ accroutests()
   if promptyn "[y/n]: "
     then
       accroutes=1
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Accepted Linux routes enabled." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Accepted Linux routes enabled." >> "$logfile"
     else
       accroutes=0
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Accepted Linux routes disabled." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Accepted Linux routes disabled." >> "$logfile"
   fi
   saveconfig
   timer=$timerloop
@@ -306,9 +306,9 @@ sshts()
   echo -e "${InvGreen} ${CClear} Enabling this option adds the ${CGreen}--ssh${CClear} flag to the 'tailscale up' command, allowing"
   echo -e "${InvGreen} ${CClear} you to SSH into this router from other devices on your tailnet using your Tailscale-"
   echo -e "${InvGreen} ${CClear} managed identity (subject to your tailnet ACLs). Because --ssh is a non-default"
-  echo -e "${InvGreen} ${CClear} setting, it must be present on every 'tailscale up' that TAILMON ZER0 issues, otherwise"
+  echo -e "${InvGreen} ${CClear} setting, it must be present on every 'tailscale up' that ZeroScale issues, otherwise"
   echo -e "${InvGreen} ${CClear} Tailscale refuses the command and the connection fails. Enabling this toggle makes"
-  echo -e "${InvGreen} ${CClear} TAILMON ZER0 include it every time. Please indicate 'y' or 'n' below."
+  echo -e "${InvGreen} ${CClear} ZeroScale include it every time. Please indicate 'y' or 'n' below."
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} (Default = No)"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -319,10 +319,10 @@ sshts()
   if promptyn "[y/n]: "
     then
       sshenable=1
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Tailscale SSH enabled." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Tailscale SSH enabled." >> "$logfile"
     else
       sshenable=0
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Tailscale SSH disabled." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Tailscale SSH disabled." >> "$logfile"
   fi
   saveconfig
   timer=$timerloop
@@ -357,11 +357,11 @@ while true; do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} AMTM Email Notifications                                                              ${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Please indicate if you would like TAILMON ZER0 to send you email notifications for${CClear}"
+  echo -e "${InvGreen} ${CClear} Please indicate if you would like ZeroScale to send you email notifications for${CClear}"
   echo -e "${InvGreen} ${CClear} Tailscale service/connection failures, or successes, or both?  PLEASE NOTE: This${CClear}"
   echo -e "${InvGreen} ${CClear} does require that AMTM email has been set up successfully under AMTM -> em (email${CClear}"
   echo -e "${InvGreen} ${CClear} settings). Once you are able to send and receive test emails from AMTM, you may${CClear}"
-  echo -e "${InvGreen} ${CClear} use this functionality in TAILMON ZER0. Additionally, this functionality will download${CClear}"
+  echo -e "${InvGreen} ${CClear} use this functionality in ZeroScale. Additionally, this functionality will download${CClear}"
   echo -e "${InvGreen} ${CClear} an AMTM email interface library courtesey of @Martinsky, and will be located${CClear}"
   echo -e "${InvGreen} ${CClear} under a new common shared library folder called: /jffs/addons/shared-libs.${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -401,14 +401,14 @@ while true; do
          cemIsFormatHTML=true
          cemIsVerboseMode=true  ## true OR false ##
          emailBodyTitle="Testing Email Notification"
-         emailSubject="TEST: TAILMON ZER0 Email Notification"
+         emailSubject="TEST: ZeroScale Email Notification"
          tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
 
          {
-          printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>TAILMON ZER0</b>.\n"
+          printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>ZeroScale</b>.\n"
          } > "$tmpEMailBodyFile"
 
-         _SendEMailNotification_ "TAILMON ZER0 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+         _SendEMailNotification_ "ZeroScale v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
 
          echo ""
          echo ""
@@ -423,20 +423,20 @@ while true; do
              echo -e "\n[Exiting]"; sleep 2
          elif [ "$newratelimit" -ge 0 ] 2>/dev/null && [ "$newratelimit" -le 9999 ] 2>/dev/null; then
              ratelimit="$newratelimit"
-             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: New Email Rate Limit entered (per hour): $ratelimit" >> "$logfile"
+             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: New Email Rate Limit entered (per hour): $ratelimit" >> "$logfile"
              saveconfig
          else
              previousValue="$ratelimit"
              ratelimit="${ratelimit:=0}"
              [ "$ratelimit" != "$previousValue" ] && \
-             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: New Email Rate Limit entered (per hour): $ratelimit" >> "$logfile"
+             echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: New Email Rate Limit entered (per hour): $ratelimit" >> "$logfile"
              saveconfig
          fi
          ;;
 
       [Ee])
          saveconfig
-         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: AMTM Email notification configuration saved" >> "$logfile"
+         echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: AMTM Email notification configuration saved" >> "$logfile"
          timer=$timerloop
          break;;
     esac
@@ -450,7 +450,7 @@ done
 #
 # Creation Date: 2020-Jun-11 [Martinski W.]
 # Last Modified: 2024-Feb-07 [Martinski W.]
-# Modified for TAILMON ZER0 Purposes [Viktor Jaep]
+# Modified for ZeroScale Purposes [Viktor Jaep]
 ########################################################################
 
 #-----------------------------------------------------------#
@@ -465,7 +465,7 @@ _DownloadCEMLibraryFile_()
 
    printf "\33[2K\r"
    printf "${CGreen}\r[INFO: ${msgStr} the shared AMTM email library script file to support email notifications...]${CClear}"
-   echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) TAILMON[$$] - INFO: ${msgStr} the shared AMTM email library script file to support email notifications..." >> "$logfile"
+   echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) ZEROSCALE[$$] - INFO: ${msgStr} the shared AMTM email library script file to support email notifications..." >> "$logfile"
 
    mkdir -m 755 -p "$CUSTOM_EMAIL_LIBDir"
    curl -kLSs --retry 3 --retry-delay 5 --retry-connrefused \
@@ -482,7 +482,7 @@ _DownloadCEMLibraryFile_()
        retCode=1
        printf "\33[2K\r"
        printf \"%s\" "${CRed}\r[ERROR: Unable to download the shared library script file ($CUSTOM_EMAIL_LIBName).]${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) TAILMON[$$] - **ERROR**: Unable to download the shared AMTM email library script file [$CUSTOM_EMAIL_LIBName]." >> "$logfile"
+       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) ZEROSCALE[$$] - **ERROR**: Unable to download the shared AMTM email library script file [$CUSTOM_EMAIL_LIBName]." >> "$logfile"
    fi
    return "$retCode"
 }
@@ -501,7 +501,7 @@ _SendEMailNotification_()
        printf "\33[2K\r"
        printf \"%s\" "${CRed}\r[ERROR: Email library script ($CUSTOM_EMAIL_LIBFile) *NOT* FOUND.]${CClear}"
        sleep 5
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) TAILMON[$$] - **ERROR**: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND." >> "$logfile"
+       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) ZEROSCALE[$$] - **ERROR**: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND." >> "$logfile"
        return 1
    fi
 
@@ -510,7 +510,7 @@ _SendEMailNotification_()
        printf "\33[2K\r"
        printf "${CRed}\r[ERROR: INSUFFICIENT email parameters]${CClear}"
        sleep 5
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) TAILMON[$$] - **ERROR**: INSUFFICIENT email parameters." >> "$logfile"
+       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) ZEROSCALE[$$] - **ERROR**: INSUFFICIENT email parameters." >> "$logfile"
        return 1
    fi
    local retCode  emailBodyTitleStr=""
@@ -525,12 +525,12 @@ _SendEMailNotification_()
    then
      printf "\33[2K\r"
      printf \"%s\" "${CGreen}\r[Email notification was sent successfully ($2)]${CClear}"
-     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) TAILMON[$$] - INFO: Email notification was sent successfully [$2]" >> "$logfile"
+     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) ZEROSCALE[$$] - INFO: Email notification was sent successfully [$2]" >> "$logfile"
      sleep 5
    else
      printf "\33[2K\r"
      printf \"%s\" "${CRed}\r[ERROR: Failure to send email notification (Error Code: $retCode - $2).]${CClear}"
-     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) TAILMON[$$] - **ERROR**: Failure to send email notification [$2]" >> "$logfile"
+     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) ZEROSCALE[$$] - **ERROR**: Failure to send email notification [$2]" >> "$logfile"
      sleep 5
    fi
 
@@ -538,7 +538,7 @@ _SendEMailNotification_()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# sendmessage is a function that sends an AMTM email based on activity within TAILMON ZER0
+# sendmessage is a function that sends an AMTM email based on activity within ZeroScale
 # $1 = Success/Failure 0/1
 # $2 = Component
 # $3 = VPN Slot
@@ -582,9 +582,9 @@ fi
         {
         printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
         printf "\n"
-        printf "<b>ALERT: TAILMON ZER0</b> is currently recovering from out-of-sync settings issues! TAILMON ZER0 has detected\n"
-        printf "that the Tailscale service settings are not in sync with the TAILMON ZER0 config. This could be due to a\n"
-        printf "Tailscale update. TAILMON ZER0 has fixed the settings and restarted the Tailscale service/connection.\n"
+        printf "<b>ALERT: ZeroScale</b> is currently recovering from out-of-sync settings issues! ZeroScale has detected\n"
+        printf "that the Tailscale service settings are not in sync with the ZeroScale config. This could be due to a\n"
+        printf "Tailscale update. ZeroScale has fixed the settings and restarted the Tailscale service/connection.\n"
         printf "\n"
         } > "$tmpEMailBodyFile"
       elif [ "$2" == "Tailscale Service Restarted" ]; then
@@ -593,7 +593,7 @@ fi
         {
         printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
         printf "\n"
-        printf "<b>FAILURE: TAILMON ZER0</b> has detected that the Tailscale service was dead and not connected. TAILMON ZER0.\n"
+        printf "<b>FAILURE: ZeroScale</b> has detected that the Tailscale service was dead and not connected. ZeroScale.\n"
         printf "has reset the service, and reestablished a connection to your Tailnet. Please investigate if this\n"
         printf "behavior continues to persist.\n"
         printf "\n"
@@ -604,30 +604,30 @@ fi
         {
         printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
         printf "\n"
-        printf "<b>WARNING: TAILMON ZER0</b> has detected that the router may have rebooted or was restarted. TAILMON ZER0.\n"
+        printf "<b>WARNING: ZeroScale</b> has detected that the router may have rebooted or was restarted. ZeroScale.\n"
         printf "has reset the service, and reestablished a connection to your Tailnet. Please investigate if this\n"
         printf "behavior continues to persist.\n"
         printf "\n"
         } > "$tmpEMailBodyFile"
       # Rung: added request email functionality
-      elif [ "$2" == "Tailmon email requested" ]; then
+      elif [ "$2" == "ZeroScale email requested" ]; then
         emailSubject="WARNING: Router Has Unexpectedly Restarted"
         emailBodyTitle="WARNING: Router Has Unexpectedly Restarted"
         {
         printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
         printf "\n"
-        printf "<b>WARNING: TAILMON ZER0</b> has been requested to send this email from the services-start script.\n"
-        printf "If no additional email is received, this means that TAILMON ZER0 has failed to start for some reason.\n"
+        printf "<b>WARNING: ZeroScale</b> has been requested to send this email from the services-start script.\n"
+        printf "If no additional email is received, this means that ZeroScale has failed to start for some reason.\n"
         printf "Please investigate if this behavior continues to persist.\n"
         printf "\n"
         } > "$tmpEMailBodyFile"
-      elif [ "$2" == "Unable to reach TAILMON ZER0 repository" ]; then
-        emailSubject="WARNING: Router unable to reach TAILMON ZER0 Repository"
-        emailBodyTitle="WARNING: Router unable to reach TAILMON ZER0 Repository"
+      elif [ "$2" == "Unable to reach ZeroScale repository" ]; then
+        emailSubject="WARNING: Router unable to reach ZeroScale Repository"
+        emailBodyTitle="WARNING: Router unable to reach ZeroScale Repository"
         {
         printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
         printf "\n"
-        printf "<b>WARNING: TAILMON ZER0</b> is unable to reach the TAILMON ZER0 repository on GitHub in order to perform\n"
+        printf "<b>WARNING: ZeroScale</b> is unable to reach the ZeroScale repository on GitHub in order to perform\n"
         printf "an autoupdate function. Please check your internet connectivity or any blocking tools in place.\n"
         printf "Please investigate if this behavior continues to persist.\n"
         printf "\n"
@@ -638,13 +638,13 @@ fi
         {
         printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
         printf "\n"
-        printf "<b>WARNING: TAILMON ZER0</b> is unable to reach the Tailscale repository in order to perform an\n"
+        printf "<b>WARNING: ZeroScale</b> is unable to reach the Tailscale repository in order to perform an\n"
         printf "autoupdate. Please check your internet connectivity or any blocking tools in place.\n"
         printf "Please investigate if this behavior continues to persist.\n"
         printf "\n"
         } > "$tmpEMailBodyFile"
       fi
-      _SendEMailNotification_ "TAILMON ZER0 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+      _SendEMailNotification_ "ZeroScale v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
     fi
 
     if [ "$1" == "0" ] && [ "$amtmemailsuccess" == "1" ]; then
@@ -654,32 +654,32 @@ fi
         {
         printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
         printf "\n"
-        printf "<b>SUCCESS: TAILMON ZER0</b> has successfully autoupdated the Tailscale Binary to the latest version.\n"
+        printf "<b>SUCCESS: ZeroScale</b> has successfully autoupdated the Tailscale Binary to the latest version.\n"
         printf "\n"
         } > "$tmpEMailBodyFile"
-      elif [ "$2" == "TAILMON ZER0 Script Successfully Updated" ]; then
+      elif [ "$2" == "ZeroScale Script Successfully Updated" ]; then
         if [ "$5" == "lt" ]; then
-          emailSubject="SUCCESS: TAILMON ZER0 was corrected to the configured track"
-          emailBodyTitle="SUCCESS: TAILMON ZER0 v$3 did not match the configured track and was corrected to v$4"
+          emailSubject="SUCCESS: ZeroScale was corrected to the configured track"
+          emailBodyTitle="SUCCESS: ZeroScale v$3 did not match the configured track and was corrected to v$4"
           {
           printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
           printf "\n"
-          printf \"%s\" "<b>SUCCESS: TAILMON ZER0</b> detected that the installed script (v$3) did not match the configured\n"
+          printf \"%s\" "<b>SUCCESS: ZeroScale</b> detected that the installed script (v$3) did not match the configured\n"
           printf \"%s\" "update track and has corrected it to the appropriate version (v$4) via autoupdate.\n"
           printf "\n"
           } > "$tmpEMailBodyFile"
         else
-          emailSubject="SUCCESS: TAILMON ZER0 was successfully updated via autoupdate"
-          emailBodyTitle="SUCCESS: TAILMON ZER0 was successfully updated via autoupdate from v$3 to v$4"
+          emailSubject="SUCCESS: ZeroScale was successfully updated via autoupdate"
+          emailBodyTitle="SUCCESS: ZeroScale was successfully updated via autoupdate from v$3 to v$4"
           {
           printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
           printf "\n"
-          printf "<b>SUCCESS: TAILMON ZER0</b> was successfully updated to the latest version via autoupdate.\n"
+          printf "<b>SUCCESS: ZeroScale</b> was successfully updated to the latest version via autoupdate.\n"
           printf "\n"
           } > "$tmpEMailBodyFile"
         fi
       fi
-      _SendEMailNotification_ "TAILMON ZER0 v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+      _SendEMailNotification_ "ZeroScale v$version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
     fi
 
   fi
@@ -718,7 +718,7 @@ if [ "$recent_email_count" -ge "$ratelimit" ]
   then
     printf "\33[2K\r"
     printf "${CGreen}\r[Rate limit exceeded. Emails will be prevented from sending]"
-    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Email Rate limit exceeded ($ratelimit). Emails will be prevented from sending." >> "$logfile"
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Email Rate limit exceeded ($ratelimit). Emails will be prevented from sending." >> "$logfile"
     sleep 2
     mv "$tmemailstemp" "$tmemails"
     return 1
@@ -734,7 +734,7 @@ fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# installdependencies checks for existence of entware, and if so proceed and install the packages, then run tailmon-zero -config
+# installdependencies checks for existence of entware, and if so proceed and install the packages, then run zeroscale -config
 
 installdependencies()
 {
@@ -745,10 +745,10 @@ installdependencies()
     clear
     echo -e "${InvGreen} ${InvDkGray}${CWhite} Install Dependencies                                                                  ${CClear}"
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} Missing dependencies required by TAILMON ZER0 will be installed during this process."
+    echo -e "${InvGreen} ${CClear} Missing dependencies required by ZeroScale will be installed during this process."
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo ""
-    echo -e "TAILMON ZER0 has some dependencies in order to function correctly, namely, CoreUtils-Timeout"
+    echo -e "ZeroScale has some dependencies in order to function correctly, namely, CoreUtils-Timeout"
     echo -e "and the Screen utility. These utilities require you to have Entware already installed"
     echo -e "using the AMTM tool. If Entware is present, the Timeout and Screen utilities will"
     echo -e "automatically be downloaded and installed during this process."
@@ -782,7 +782,7 @@ installdependencies()
           opkg install screen
           echo ""
           echo -e "Install completed..."
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Entware dependencies installed." >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Entware dependencies installed." >> "$logfile"
           echo ""
           read -rsp $'Press any key to continue...\n' -n1 key
           echo ""
@@ -793,7 +793,7 @@ installdependencies()
           clear
           echo -e "${CRed}ERROR: Entware was not found on this router...${CClear}"
           echo -e "Please install Entware using the AMTM utility before proceeding..."
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - ERROR: Entware was not found installed on router. Please investigate." >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Entware was not found installed on router. Please investigate." >> "$logfile"
           echo ""
           read -rsp $'Press any key to continue...\n' -n1 key
           exit 1
@@ -816,7 +816,7 @@ reinstalldependencies()
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} Re-install Dependencies                                                               ${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Missing dependencies required by TAILMON ZER0 will be re-installed during this process."
+  echo -e "${InvGreen} ${CClear} Missing dependencies required by ZeroScale will be re-installed during this process."
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
   echo -e "Would you like to re-install the CoreUtils-Timeout and the Screen utility? These"
@@ -854,14 +854,14 @@ reinstalldependencies()
         opkg install --force-reinstall screen
         echo ""
         echo -e "Re-install completed..."
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Entware dependencies re-installed." >> "$logfile"
+        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Entware dependencies re-installed." >> "$logfile"
         echo ""
         read -rsp $'Press any key to continue...\n' -n1 key
       else
         clear
         echo -e "${CRed}ERROR: Entware was not found on this router...${CClear}"
         echo -e "Please install Entware using the AMTM utility before proceeding..."
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - ERROR: Entware was not found installed on router. Please investigate." >> "$logfile"
+        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Entware was not found installed on router. Please investigate." >> "$logfile"
         echo ""
         read -rsp $'Press any key to continue...\n' -n1 key
         exit 1
@@ -878,7 +878,7 @@ vsetup()
     installdependencies
   fi
 
-  # Grab the TAILMON ZER0 config file and read it in
+  # Grab the ZeroScale config file and read it in
   if [ -f "$config" ]; then
     source "$config"
   else
@@ -902,10 +902,10 @@ vsetup()
     tsver=$(tailscale version | awk 'NR==1 {print $1}') >/dev/null 2>&1
     if [ -z "$tsver" ]; then tsver="0.00"; fi
 
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} TAILMON ZER0 Main Setup and Configuration Menu                                             ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Main Setup and Configuration Menu                                             ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to perform high level${CClear}"
-    echo -e "${InvGreen} ${CClear} actions in the management of the TAILMON ZER0 script.${CClear}"
+    echo -e "${InvGreen} ${CClear} actions in the management of the ZeroScale script.${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 1)${CClear} : Install Tailscale Entware Package(s)         : ${CGreen}$tsinstalleddisp${CClear}"
@@ -949,17 +949,17 @@ vsetup()
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Custom configuration options for TAILMON ZER0${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Custom configuration options for ZeroScale${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : Force reinstall Entware dependencies${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Check for latest updates${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Uninstall TAILMON ZER0${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Uninstall ZeroScale${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
     if tailscaleready; then
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( L)${CClear} : Launch TAILMON ZER0 in Monitoring Mode (${CGreen}sh /jffs/scripts/tailmon-zero.sh${CClear})"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( M)${CClear} : Launch TAILMON ZER0 in Monitoring Mode using SCREEN (${CGreen}sh /jf..ts/tailmon-zero.sh -screen${CClear})"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( L)${CClear} : Launch ZeroScale in Monitoring Mode (${CGreen}sh /jffs/scripts/zeroscale.sh${CClear})"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( M)${CClear} : Launch ZeroScale in Monitoring Mode using SCREEN (${CGreen}sh /jf..ts/zeroscale.sh -screen${CClear})"
     else
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}( L) : Launch TAILMON ZER0 in Monitoring Mode              : Unavailable (install Tailscale first)${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}( M) : Launch TAILMON ZER0 using SCREEN                   : Unavailable (install Tailscale first)${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}( L) : Launch ZeroScale in Monitoring Mode              : Unavailable (install Tailscale first)${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}( M) : Launch ZeroScale using SCREEN                   : Unavailable (install Tailscale first)${CClear}"
     fi
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
@@ -998,7 +998,7 @@ vsetup()
 
         [Mm])
           if tailscaleready; then
-            exec sh /jffs/scripts/tailmon-zero.sh -screen -now
+            exec sh /jffs/scripts/zeroscale.sh -screen -now
           else
             monitoringblocked pause
           fi
@@ -1053,11 +1053,11 @@ vsetup()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# vconfig is a function that provides a UI to choose various options for tailmon-zero
+# vconfig is a function that provides a UI to choose various options for ZeroScale
 
 vconfig()
 {
-  # Grab the TAILMON ZER0 config file and read it in
+  # Grab the ZeroScale config file and read it in
   if [ -f "$config" ]; then
     source "$config"
   else
@@ -1118,7 +1118,7 @@ vconfig()
     fi
 
     clear
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} TAILMON ZER0 Configuration Option                                                          ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Configuration Option                                                          ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
     echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
@@ -1129,8 +1129,8 @@ vconfig()
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : AMTM Email Notifications / Rate Limiting     : ${CGreen}$amtmemailsuccfaildisp $rldisp"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : Keep settings on Tailscale Entware updates   : ${CGreen}$persistentsettingsdisp"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Autostart TAILMON ZER0 on Reboot                  : ${CGreen}$autostartdisp"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Schedule TAILMON ZER0 + Tailscale Autoupdate      : ${CGreen}$schedtime${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Autostart ZeroScale on Reboot                  : ${CGreen}$autostartdisp"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Schedule ZeroScale + Tailscale Autoupdate      : ${CGreen}$schedtime${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
     echo -e "${InvGreen} ${CClear}"
@@ -1142,7 +1142,7 @@ vconfig()
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Keep Tailscale Service Alive                                                          ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate if you want TAILMON ZER0 to check the status of the Tailscale Service${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate if you want ZeroScale to check the status of the Tailscale Service${CClear}"
           echo -e "${InvGreen} ${CClear} and restart it if necessary? While Tailscale overall is fairly stable, there are${CClear}"
           echo -e "${InvGreen} ${CClear} instances where the service with terminate."
           echo -e "${InvGreen} ${CClear}"
@@ -1155,10 +1155,10 @@ vconfig()
           if promptyn "[y/n]: "
             then
               keepalive=1
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 keepalive enabled." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale keepalive enabled." >> "$logfile"
             else
               keepalive=0
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 keepalive disabled." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale keepalive disabled." >> "$logfile"
           fi
           saveconfig
         ;;
@@ -1186,7 +1186,7 @@ vconfig()
             elif [ "$NEWLOGSIZE" -ge 0 ] && [ "$NEWLOGSIZE" -le 9999 ]; then
               logsize=$NEWLOGSIZE
               saveconfig
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Event log size configured for $logsize rows." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Event log size configured for $logsize rows." >> "$logfile"
             else
               logsize=2000
               saveconfig
@@ -1202,7 +1202,7 @@ vconfig()
           clear
           echo -e "${InvGreen} ${InvDkGray}${CWhite} Keep Settings Persistent on Tailscale Entware Updates                                 ${CClear}"
           echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate if you want TAILMON ZER0 to check the Tailscale Service settings on${CClear}"
+          echo -e "${InvGreen} ${CClear} Please indicate if you want ZeroScale to check the Tailscale Service settings on${CClear}"
           echo -e "${InvGreen} ${CClear} a regular basis to determine if settings are out-of-sync due to a possible${CClear}"
           echo -e "${InvGreen} ${CClear} Tailscale Entware upgrade? A common side-effect after updating the Tailscale${CClear}"
           echo -e "${InvGreen} ${CClear} Entware package is that it will remove your previously configured settings,${CClear}"
@@ -1217,10 +1217,10 @@ vconfig()
           if promptyn "[y/n]: "
             then
               persistentsettings=1
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 Keep Settings Persistent enabled." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale Keep Settings Persistent enabled." >> "$logfile"
             else
               persistentsettings=0
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 Keep Settings Persistent disabled." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale Keep Settings Persistent disabled." >> "$logfile"
           fi
           saveconfig
         ;;
@@ -1295,14 +1295,14 @@ vupdate()
 
           [Yy])
             echo ""
-            echo -e "\nDownloading TAILMON ZER0 ${CGreen}STABLE${CClear}"
-            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/main/tailmon-zero.sh" -o "/jffs/scripts/tailmon-zero.sh" && chmod 755 "/jffs/scripts/tailmon-zero.sh"
+            echo -e "\nDownloading ZeroScale ${CGreen}STABLE${CClear}"
+            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/main/zeroscale.sh" -o "/jffs/scripts/zeroscale.sh" && chmod 755 "/jffs/scripts/zeroscale.sh"
             echo ""
             echo -e "Download successful!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 update successfully downloaded and installed." >> "$logfile"
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale update successfully downloaded and installed." >> "$logfile"
             echo ""
-            read -rsp $'Press any key to restart TAILMON ZER0...\n' -n1 key
-            exec /jffs/scripts/tailmon-zero.sh -setup
+            read -rsp $'Press any key to restart ZeroScale...\n' -n1 key
+            exec /jffs/scripts/zeroscale.sh -setup
             ;;
 
           [Nn])
@@ -1339,14 +1339,14 @@ vupdate()
 
           [Yy])
             echo ""
-            echo -e "\nDownloading TAILMON ZER0 ${CGreen}STABLE${CClear}"
-            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/main/tailmon-zero.sh" -o "/jffs/scripts/tailmon-zero.sh" && chmod 755 "/jffs/scripts/tailmon-zero.sh"
+            echo -e "\nDownloading ZeroScale ${CGreen}STABLE${CClear}"
+            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/main/zeroscale.sh" -o "/jffs/scripts/zeroscale.sh" && chmod 755 "/jffs/scripts/zeroscale.sh"
             echo ""
             echo -e "Download successful!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 update successfully downloaded and installed." >> "$logfile"
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale update successfully downloaded and installed." >> "$logfile"
             echo ""
-            read -rsp $'Press any key to restart TAILMON ZER0...\n' -n1 key
-            exec /jffs/scripts/tailmon-zero.sh -setup
+            read -rsp $'Press any key to restart ZeroScale...\n' -n1 key
+            exec /jffs/scripts/zeroscale.sh -setup
             ;;
 
           [Nn])
@@ -1386,14 +1386,14 @@ vupdate()
 
             [Yy])
               echo ""
-              echo -e "\nDownloading TAILMON ZER0 ${CGreen}BETA${CClear}"
-              curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/beta/tailmon-zero.sh" -o "/jffs/scripts/tailmon-zero.sh" && chmod 755 "/jffs/scripts/tailmon-zero.sh"
+              echo -e "\nDownloading ZeroScale ${CGreen}BETA${CClear}"
+              curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/beta/zeroscale.sh" -o "/jffs/scripts/zeroscale.sh" && chmod 755 "/jffs/scripts/zeroscale.sh"
               echo ""
               echo -e "Download successful!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 BETA update successfully downloaded and installed." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale BETA update successfully downloaded and installed." >> "$logfile"
               echo ""
-              read -rsp $'Press any key to restart TAILMON ZER0...\n' -n1 key
-              exec /jffs/scripts/tailmon-zero.sh -setup
+              read -rsp $'Press any key to restart ZeroScale...\n' -n1 key
+              exec /jffs/scripts/zeroscale.sh -setup
               ;;
 
             [Nn])
@@ -1431,14 +1431,14 @@ vupdate()
 
             [Yy])
               echo ""
-              echo -e "\nDownloading TAILMON ZER0 ${CGreen}BETA${CClear}"
-              curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/beta/tailmon-zero.sh" -o "/jffs/scripts/tailmon-zero.sh" && chmod 755 "/jffs/scripts/tailmon-zero.sh"
+              echo -e "\nDownloading ZeroScale ${CGreen}BETA${CClear}"
+              curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/beta/zeroscale.sh" -o "/jffs/scripts/zeroscale.sh" && chmod 755 "/jffs/scripts/zeroscale.sh"
               echo ""
               echo -e "Download successful!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 BETA update successfully downloaded and installed." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale BETA update successfully downloaded and installed." >> "$logfile"
               echo ""
-              read -rsp $'Press any key to restart TAILMON ZER0...\n' -n1 key
-              exec /jffs/scripts/tailmon-zero.sh -setup
+              read -rsp $'Press any key to restart ZeroScale...\n' -n1 key
+              exec /jffs/scripts/zeroscale.sh -setup
               ;;
 
             [Nn])
@@ -1469,7 +1469,7 @@ updatecheck()
 {
 
   # Download the latest version file from the source repository
-  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/main/version.txt" -o "/jffs/addons/tailmon-zero.d/version.txt"
+  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/main/version.txt" -o "/jffs/addons/zeroscale.d/version.txt"
 
   if [ -f "$dlverpath" ]
     then
@@ -1496,7 +1496,7 @@ betacheck()
 {
 
   # Download the latest version file from the source repository
-  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/beta/version.txt" -o "/jffs/addons/tailmon-zero.d/beta.txt"
+  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/beta/version.txt" -o "/jffs/addons/zeroscale.d/beta.txt"
 
   if [ -f "$bverpath" ]
     then

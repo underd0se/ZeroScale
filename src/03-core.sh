@@ -1,16 +1,16 @@
 # -------------------------------------------------------------------------------------------------------------------------
-# autoupdate will automatically download and install new TAILMON ZER0 scripts and Tailscale binaries - run via CRON job/switch
+# autoupdate will automatically download and install new ZeroScale scripts and Tailscale binaries - run via CRON job/switch
 
 autoupdate()
 {
 
   clear
 
-  # Put TAILMON ZER0 into maintenance mode
-  echo > /jffs/addons/tailmon-zero.d/updating.txt
+  # Put ZeroScale into maintenance mode
+  echo > /jffs/addons/zeroscale.d/updating.txt
 
-  #Display tailmon-zero client header
-  echo -en "${InvGreen} ${InvDkGray} TAILMON ZER0 - v"
+  #Display ZeroScale client header
+  echo -en "${InvGreen} ${InvDkGray} ZeroScale - v"
   printf "%-8s" "$version"
   echo -e "                      ${CWhite}Run Auto Update${InvDkGray}                  $tzspaces$(date) ${CClear}"
   echo ""
@@ -18,10 +18,10 @@ autoupdate()
   if [ "$updatetm" -eq 1 ]
     then
       printf "\33[2K\r"
-      printf "${CGreen}\r[Checking Local TAILMON ZER0 Version]"
+      printf "${CGreen}\r[Checking Local ZeroScale Version]"
 
       # Copy current version of script into a version file
-      echo "$version" > "/jffs/addons/tailmon-zero.d/localver.txt"
+      echo "$version" > "/jffs/addons/zeroscale.d/localver.txt"
       sleep 1
 
       printf "\33[2K\r"
@@ -29,11 +29,11 @@ autoupdate()
       # Download the latest version file from the source repository
       if [ "$track" = "1" ]
         then
-        printf "${CGreen}\r[Checking TAILMON ZER0 BETA Version]"
-        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/beta/version.txt" -o "/jffs/addons/tailmon-zero.d/beta.txt"
+        printf "${CGreen}\r[Checking ZeroScale BETA Version]"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/beta/version.txt" -o "/jffs/addons/zeroscale.d/beta.txt"
       else
-        printf "${CGreen}\r[Checking Official TAILMON ZER0 Version]"
-        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/main/version.txt" -o "/jffs/addons/tailmon-zero.d/version.txt"
+        printf "${CGreen}\r[Checking Official ZeroScale Version]"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/main/version.txt" -o "/jffs/addons/zeroscale.d/version.txt"
       fi
 
       sleep 1
@@ -41,27 +41,27 @@ autoupdate()
       if [ $officialverchk -ne 0 ]
         then
         printf "\33[2K\r"
-        printf "${CGreen}\r[Unable to Determine TAILMON ZER0 Version...Exiting]\n"
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - ERROR: Unable to determine TAILMON ZER0 version -- please check your internet connection. Autoupdate exiting." >> "$logfile"
+        printf "${CGreen}\r[Unable to Determine ZeroScale Version...Exiting]\n"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Unable to determine ZeroScale version -- please check your internet connection. Autoupdate exiting." >> "$logfile"
         echo -e "${CClear}"
-        sendmessage 1 "Unable to reach TAILMON ZER0 repository"
+        sendmessage 1 "Unable to reach ZeroScale repository"
         sleep 1
-        rm -f /jffs/addons/tailmon-zero.d/updating.txt >/dev/null 2>&1
+        rm -f /jffs/addons/zeroscale.d/updating.txt >/dev/null 2>&1
         exit 1
       fi
       sleep 1
 
       printf "\33[2K\r"
-      printf "${CGreen}\r[Comparing TAILMON ZER0 Versions]"
+      printf "${CGreen}\r[Comparing ZeroScale Versions]"
       sleep 1
 
       # Check differences in version and download if newer official version is present
       if [ "$track" = "1" ]; then
-        local localver=$(cat "/jffs/addons/tailmon-zero.d/localver.txt")
-        local serverver=$(cat "/jffs/addons/tailmon-zero.d/beta.txt")
+        local localver=$(cat "/jffs/addons/zeroscale.d/localver.txt")
+        local serverver=$(cat "/jffs/addons/zeroscale.d/beta.txt")
       else
-        local localver=$(cat "/jffs/addons/tailmon-zero.d/localver.txt")
-        local serverver=$(cat "/jffs/addons/tailmon-zero.d/version.txt")
+        local localver=$(cat "/jffs/addons/zeroscale.d/localver.txt")
+        local serverver=$(cat "/jffs/addons/zeroscale.d/version.txt")
       fi
       if [ "$localver" != "$serverver" ]
         then
@@ -69,11 +69,11 @@ autoupdate()
 
           if [ "$track" = "1" ]
             then
-            printf \"%s\" "${CGreen}\r[Downloading New TAILMON ZER0 BETA v$serverver]\n"
-            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/beta/tailmon-zero.sh" -o "/jffs/scripts/tailmon-zero.sh" && chmod 755 "/jffs/scripts/tailmon-zero.sh"
+            printf \"%s\" "${CGreen}\r[Downloading New ZeroScale BETA v$serverver]\n"
+            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/beta/zeroscale.sh" -o "/jffs/scripts/zeroscale.sh" && chmod 755 "/jffs/scripts/zeroscale.sh"
           else
-            printf \"%s\" "${CGreen}\r[Downloading New TAILMON ZER0 STABLE v$serverver]\n"
-            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/main/tailmon-zero.sh" -o "/jffs/scripts/tailmon-zero.sh" && chmod 755 "/jffs/scripts/tailmon-zero.sh"
+            printf \"%s\" "${CGreen}\r[Downloading New ZeroScale STABLE v$serverver]\n"
+            curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/underd0se/ZeroScale/main/zeroscale.sh" -o "/jffs/scripts/zeroscale.sh" && chmod 755 "/jffs/scripts/zeroscale.sh"
           fi
 
           echo -e "${CClear}"
@@ -82,26 +82,26 @@ autoupdate()
           if [ $officialver -ne 0 ]
             then
               printf "\33[2K\r"
-              printf "${CGreen}\r[Unable to Download TAILMON ZER0...Exiting]\n"
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - ERROR: Unable to download TAILMON ZER0 -- please check your internet connection. Autoupdate exiting." >> "$logfile"
+              printf "${CGreen}\r[Unable to Download ZeroScale...Exiting]\n"
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Unable to download ZeroScale -- please check your internet connection. Autoupdate exiting." >> "$logfile"
               echo -e "${CClear}"
-              sendmessage 1 "Unable to reach TAILMON ZER0 repository"
+              sendmessage 1 "Unable to reach ZeroScale repository"
               sleep 1
-              rm -f /jffs/addons/tailmon-zero.d/updating.txt >/dev/null 2>&1
+              rm -f /jffs/addons/zeroscale.d/updating.txt >/dev/null 2>&1
               exit 1
           fi
           verdirection=$(vercompare "$serverver" "$localver")
           if [ "$verdirection" = "lt" ]; then
             if [ "$track" = "1" ]; then tracklabel="Beta"; else tracklabel="Stable"; fi
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Installed TAILMON ZER0 v$localver did not match the configured $tracklabel track -- corrected to v$serverver" >> "$logfile"
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Installed ZeroScale v$localver did not match the configured $tracklabel track -- corrected to v$serverver" >> "$logfile"
           else
-            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Successfully autoupdated TAILMON ZER0 from v$localver to v$serverver" >> "$logfile"
+            echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Successfully autoupdated ZeroScale from v$localver to v$serverver" >> "$logfile"
           fi
-          sendmessage 0 "TAILMON ZER0 Script Successfully Updated" "$localver" "$serverver" "$verdirection"
-          echo > /jffs/addons/tailmon-zero.d/updated.txt
+          sendmessage 0 "ZeroScale Script Successfully Updated" "$localver" "$serverver" "$verdirection"
+          echo > /jffs/addons/zeroscale.d/updated.txt
       else
         printf "\33[2K\r"
-        printf "${CGreen}\r[Local TAILMON ZER0 Version is the Latest Available]\n"
+        printf "${CGreen}\r[Local ZeroScale Version is the Latest Available]\n"
         echo -e "${CClear}"
         sleep 1
       fi
@@ -115,16 +115,16 @@ autoupdate()
       sleep 1
 
       # Checking for local Tailscale version
-      tailscale version | awk 'NR==1 {print $1}' > /jffs/addons/tailmon-zero.d/localtsver.txt
+      tailscale version | awk 'NR==1 {print $1}' > /jffs/addons/zeroscale.d/localtsver.txt
       localtsverchk=$?
       if [ $localtsverchk -ne 0 ]
         then
           printf "\33[2K\r"
           printf "${CGreen}\r[Unable to Determine Local Tailscale Version...Exiting]\n"
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - ERROR: Unable to determine local Tailscale version -- please check your installation. Autoupdate exiting." >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Unable to determine local Tailscale version -- please check your installation. Autoupdate exiting." >> "$logfile"
           echo -e "${CClear}"
           sleep 2
-          rm -f /jffs/addons/tailmon-zero.d/updating.txt >/dev/null 2>&1
+          rm -f /jffs/addons/zeroscale.d/updating.txt >/dev/null 2>&1
           exit 1
       fi
       sleep 1
@@ -134,17 +134,17 @@ autoupdate()
       sleep 1
 
       # Checking for upstream Tailscale version
-      tailscale version --upstream | awk -F":" '/upstream/ {print $2}' | sed "s/^ //" > /jffs/addons/tailmon-zero.d/tsversion.txt
+      tailscale version --upstream | awk -F":" '/upstream/ {print $2}' | sed "s/^ //" > /jffs/addons/zeroscale.d/tsversion.txt
       upstreamtsverchk=$?
       if [ $upstreamtsverchk -ne 0 ]
         then
           printf "\33[2K\r"
           printf "${CGreen}\r[Unable to Determine Official Tailscale Version...Exiting]\n"
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - ERROR: Unable to determine Official Tailscale version -- please check your installation/internet connection. Autoupdate exiting." >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Unable to determine Official Tailscale version -- please check your installation/internet connection. Autoupdate exiting." >> "$logfile"
           echo -e "${CClear}"
           sendmessage 1 "Unable to reach Tailscale repository"
           sleep 1
-          rm -f /jffs/addons/tailmon-zero.d/updating.txt >/dev/null 2>&1
+          rm -f /jffs/addons/zeroscale.d/updating.txt >/dev/null 2>&1
           exit 1
       fi
       sleep 1
@@ -154,8 +154,8 @@ autoupdate()
       sleep 1
 
       # Check differences in version and download if newer official version is present
-      localtsver=$(cat "/jffs/addons/tailmon-zero.d/localtsver.txt")
-      servertsver=$(cat "/jffs/addons/tailmon-zero.d/tsversion.txt")
+      localtsver=$(cat "/jffs/addons/zeroscale.d/localtsver.txt")
+      servertsver=$(cat "/jffs/addons/zeroscale.d/tsversion.txt")
       if [ "$localtsver" != "$servertsver" ]
         then
           printf "\33[2K\r"
@@ -169,15 +169,15 @@ autoupdate()
             then
               printf "\33[2K\r"
               printf "${CGreen}\r[Unable to Download Tailscale Binary...Exiting]\n"
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - ERROR: Unable to download Tailscale Binary - please check your installation/internet connection." >> "$logfile"
+              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Unable to download Tailscale Binary - please check your installation/internet connection." >> "$logfile"
               echo -e "${CClear}"
               sendmessage 1 "Unable to reach Tailscale repository"
               sleep 1
-              rm -f /jffs/addons/tailmon-zero.d/updating.txt >/dev/null 2>&1
+              rm -f /jffs/addons/zeroscale.d/updating.txt >/dev/null 2>&1
               exit 1
           fi
           echo ""
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Successfully autoupdated Tailscale Binary from v$localtsver to v$servertsver" >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Successfully autoupdated Tailscale Binary from v$localtsver to v$servertsver" >> "$logfile"
           sendmessage 0 "Tailscale Successfully Updated" "$localtsver" "$servertsver"
 
           # Upon a successful update, restart Tailscale services
@@ -212,9 +212,9 @@ autoupdate()
           printf "\33[2K\r"
           printf "${CGreen}\r[Autoupdate Completed Successfully]\n"
           echo -e "${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Autoupdate completed successfully." >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Autoupdate completed successfully." >> "$logfile"
           sleep 1
-          rm -f /jffs/addons/tailmon-zero.d/updating.txt >/dev/null 2>&1
+          rm -f /jffs/addons/zeroscale.d/updating.txt >/dev/null 2>&1
           exit 0
 
       else
@@ -229,9 +229,9 @@ autoupdate()
   printf "\33[2K\r"
   printf "${CGreen}\r[Autoupdate Completed Successfully]\n"
   echo -e "${CClear}"
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Autoupdate completed successfully." >> "$logfile"
+  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Autoupdate completed successfully." >> "$logfile"
   sleep 1
-  rm -f /jffs/addons/tailmon-zero.d/updating.txt >/dev/null 2>&1
+  rm -f /jffs/addons/zeroscale.d/updating.txt >/dev/null 2>&1
   exit 0
 
 }
@@ -430,7 +430,7 @@ tsdowngrade()
     restarttsc
   fi
 
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Tailscale binaries successfully updated to $TS_VERSION" >> "$logfile"
+  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Tailscale binaries successfully updated to $TS_VERSION" >> "$logfile"
   resettimer=1
 }
 
@@ -446,10 +446,10 @@ scheduleautoupdates()
 while true
 do
   clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} TAILMON ZER0 Autoupdate Scheduler                                                          ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Autoupdate Scheduler                                                          ${CClear}"
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} Please indicate below if you would like to enable and schedule a daily autoupdate CRON"
-  echo -e "${InvGreen} ${CClear} job. This can check for both TAILMON ZER0 and Tailscale updates. Please NOTE: Autoupdate"
+  echo -e "${InvGreen} ${CClear} job. This can check for both ZeroScale and Tailscale updates. Please NOTE: Autoupdate"
   echo -e "${InvGreen} ${CClear} will only update to the latest stable release. Beta updates need to handled manually"
   echo -e "${InvGreen} ${CClear} using the option in the Main Setup & Configuration menu."
   echo -e "${InvGreen} ${CClear}"
@@ -462,7 +462,7 @@ do
   if [ "$updatets" == "1" ]; then updatetsdisp="${CGreen}Enabled${CCyan}"; else updatets=0; updatetsdisp="${CRed}Disabled${CCyan}"; fi
 
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}Autoupdate TAILMON ZER0 Script  ${CClear} ${CGreen}(1)   -${CClear} $updatetmdisp${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}Autoupdate ZeroScale Script  ${CClear} ${CGreen}(1)   -${CClear} $updatetmdisp${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}Autoupdate Tailscale Binary${CClear} ${CGreen}(2)   -${CClear} $updatetsdisp${CClear}"
   echo -e "${InvGreen} ${CClear}"
   if [ "$schedule" = "0" ]
@@ -486,8 +486,8 @@ do
           schedule=0
           if [ -f /jffs/scripts/services-start ]
           then
-            sed -i -e '/tailmon-zero.sh/d' /jffs/scripts/services-start
-            cru d RunTAILMON ZER0check
+            sed -i -e '/zeroscale.sh/d' /jffs/scripts/services-start
+            cru d RunZeroScalecheck
             schedulehrs=1
             schedulemin=0
             echo ""
@@ -496,7 +496,7 @@ do
             echo ""
             echo -e "${CGreen}[Modifying CRON jobs]..."
             sleep 2
-            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) TAILMON[$$] - INFO: Autoupdate Scheduled Check Disabled" >> "$logfile"
+            echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) ZEROSCALE[$$] - INFO: Autoupdate Scheduled Check Disabled" >> "$logfile"
             saveconfig
           fi
       ;;
@@ -570,27 +570,27 @@ do
 
           if [ -f /jffs/scripts/services-start ]
           then
-            if ! grep -q -F "sh /jffs/scripts/tailmon-zero.sh -autoupdate" /jffs/scripts/services-start
+            if ! grep -q -F "sh /jffs/scripts/zeroscale.sh -autoupdate" /jffs/scripts/services-start
             then
-              echo 'cru a RunTAILMON ZER0check "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/tailmon-zero.sh -autoupdate"'"' >> /jffs/scripts/services-start
-              cru a RunTAILMON ZER0check "$schedulemin $schedulehrs * * * sh /jffs/scripts/tailmon-zero.sh -autoupdate"
+              echo 'cru a RunZeroScalecheck "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/zeroscale.sh -autoupdate"'"' >> /jffs/scripts/services-start
+              cru a RunZeroScalecheck "$schedulemin $schedulehrs * * * sh /jffs/scripts/zeroscale.sh -autoupdate"
             else
               #delete and re-add if it already exists in case there's a time change
-              sed -i -e '/tailmon-zero.sh/d' /jffs/scripts/services-start
-              cru d RunTAILMON ZER0check
-              echo 'cru a RunTAILMON ZER0check "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/tailmon-zero.sh -autoupdate"'"' >> /jffs/scripts/services-start
-              cru a RunTAILMON ZER0check "$schedulemin $schedulehrs * * * sh /jffs/scripts/tailmon-zero.sh -autoupdate"
+              sed -i -e '/zeroscale.sh/d' /jffs/scripts/services-start
+              cru d RunZeroScalecheck
+              echo 'cru a RunZeroScalecheck "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/zeroscale.sh -autoupdate"'"' >> /jffs/scripts/services-start
+              cru a RunZeroScalecheck "$schedulemin $schedulehrs * * * sh /jffs/scripts/zeroscale.sh -autoupdate"
             fi
           else
-            echo 'cru a RunTAILMON ZER0check "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/tailmon-zero.sh -autoupdate"'"' >> /jffs/scripts/services-start
+            echo 'cru a RunZeroScalecheck "'"$schedulemin $schedulehrs * * * sh /jffs/scripts/zeroscale.sh -autoupdate"'"' >> /jffs/scripts/services-start
             chmod 755 /jffs/scripts/services-start
-            cru a RunTAILMON ZER0check "$schedulemin $schedulehrs * * * sh /jffs/scripts/tailmon-zero.sh -autoupdate"
+            cru a RunZeroScalecheck "$schedulemin $schedulehrs * * * sh /jffs/scripts/zeroscale.sh -autoupdate"
           fi
 
           echo
           echo -e "${CGreen}[Modifying CRON jobs]..."
           sleep 2
-          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) TAILMON[$$] - INFO: Autoupdate Scheduled Check Enabled" >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $(_GetLAN_HostName_) ZEROSCALE[$$] - INFO: Autoupdate Scheduled Check Enabled" >> "$logfile"
           saveconfig
       ;;
 
@@ -635,7 +635,7 @@ _GetLAN_HostName_()
 { _SetLAN_HostName_ ; echo "$LAN_HostName" ; }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# autostart lets you enable the ability for tailmon-zero to autostart after a router reboot
+# autostart lets you enable the ability for ZeroScale to autostart after a router reboot
 
 autostart()
 {
@@ -643,7 +643,7 @@ while true; do
   clear
   echo -e "${InvGreen} ${InvDkGray}${CWhite} Reboot Protection                                                                     ${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Please indicate below if you would like to enable TAILMON ZER0 to autostart after a"
+  echo -e "${InvGreen} ${CClear} Please indicate below if you would like to enable ZeroScale to autostart after a"
   echo -e "${InvGreen} ${CClear} router reboot. This will ensure continued, uninterrupted Tailscale monitoring."
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} (Default = Disabled)"
@@ -662,11 +662,11 @@ while true; do
   if [ "$autostart" == "0" ]; then
 
     if [ -f /jffs/scripts/post-mount ]; then
-      sed -i -e '/tailmon-zero.sh/d' /jffs/scripts/post-mount
+      sed -i -e '/zeroscale.sh/d' /jffs/scripts/post-mount
       autostart=0
       echo ""
       echo -e "${CGreen}[Modifying POST-MOUNT file]..."
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Reboot Protection Disabled" >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Reboot Protection Disabled" >> "$logfile"
       saveconfig
       sleep 1
       timer=$timerloop
@@ -677,12 +677,12 @@ while true; do
 
     if [ -f /jffs/scripts/post-mount ]; then
 
-      if ! grep -q -F "(sleep 30 && /jffs/scripts/tailmon-zero.sh -screen) & # Added by tailmon-zero" /jffs/scripts/post-mount; then
-        echo "(sleep 30 && /jffs/scripts/tailmon-zero.sh -screen) & # Added by tailmon-zero" >> /jffs/scripts/post-mount
+      if ! grep -q -F "(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale" /jffs/scripts/post-mount; then
+        echo "(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale" >> /jffs/scripts/post-mount
         autostart=1
         echo ""
         echo -e "${CGreen}[Modifying POST-MOUNT file]..."
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Reboot Protection Enabled" >> "$logfile"
+        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Reboot Protection Enabled" >> "$logfile"
         saveconfig
         sleep 1
         timer=$timerloop
@@ -696,12 +696,12 @@ while true; do
     else
       echo "#!/bin/sh" > /jffs/scripts/post-mount
       echo "" >> /jffs/scripts/post-mount
-      echo "(sleep 30 && /jffs/scripts/tailmon-zero.sh -screen) & # Added by tailmon-zero" >> /jffs/scripts/post-mount
+      echo "(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale" >> /jffs/scripts/post-mount
       chmod 755 /jffs/scripts/post-mount
       autostart=1
       echo ""
       echo -e "${CGreen}[Modifying POST-MOUNT file]..."
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Reboot Protection Enabled" >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Reboot Protection Enabled" >> "$logfile"
       saveconfig
       sleep 1
       timer=$timerloop
@@ -946,7 +946,7 @@ while true; do
   echo -e "${InvGreen} ${CClear} A 3rd option (Custom) is also available, that allows you to enter your own custom${CClear}"
   echo -e "${InvGreen} ${CClear} settings for the ARGS, PREARGS, PRECMD and Tailscale Commandline. ${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear}${CYellow} NOTE: TAILMON ZER0 will apply changes to modes after hitting the (e)xit key. If 'Custom'${CClear}"
+  echo -e "${InvGreen} ${CClear}${CYellow} NOTE: ZeroScale will apply changes to modes after hitting the (e)xit key. If 'Custom'${CClear}"
   echo -e "${InvGreen} ${CClear}${CYellow} operating mode is chosen, you will be presented with the option to edit custom${CClear}"
   echo -e "${InvGreen} ${CClear}${CYellow} Tailscale settings after changes have been applied.${CClear}"
   echo -e "${InvGreen} ${CClear}"
@@ -1067,7 +1067,7 @@ done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# inject_s06tailscaled applies TAILMON ZER0 swapless logic and memory constraints
+# inject_s06tailscaled applies ZeroScale swapless logic and memory constraints
 
 inject_s06tailscaled()
 {
@@ -1091,11 +1091,11 @@ inject_s06tailscaled()
     sed -i '/^fi$/d' "/opt/etc/init.d/S06tailscaled" 2>/dev/null || true
     
     # Clean new block logic
-    sed -i '/# TAILMON ZER0: Dynamic Swapless Block Start/,/# TAILMON ZER0: Dynamic Swapless Block End/d' "/opt/etc/init.d/S06tailscaled"
+    sed -i '/# ZeroScale: Dynamic Swapless Block Start/,/# ZeroScale: Dynamic Swapless Block End/d' "/opt/etc/init.d/S06tailscaled"
 
     # Inject new logic
     awk -v old_oc="$old_overcommit" 'NR==2{
-      print "# TAILMON ZER0: Dynamic Swapless Block Start"
+      print "# ZeroScale: Dynamic Swapless Block Start"
       print "export GODEBUG=tlsmlkem=0"
       print "swap_total=$(free | awk '"'"'/^Swap:/ {print $2}'"'"')"
       print "if [ \"$swap_total\" = \"0\" ]; then"
@@ -1106,7 +1106,7 @@ inject_s06tailscaled()
       print "else"
       print "    [ -n \"" old_oc "\" ] && echo \"" old_oc "\" > /proc/sys/vm/overcommit_memory 2>/dev/null"
       print "fi"
-      print "# TAILMON ZER0: Dynamic Swapless Block End"
+      print "# ZeroScale: Dynamic Swapless Block End"
     }1' "/opt/etc/init.d/S06tailscaled" > "/tmp/S06tailscaled.tmp" && mv "/tmp/S06tailscaled.tmp" "/opt/etc/init.d/S06tailscaled" && chmod +x "/opt/etc/init.d/S06tailscaled"
   fi
 }
@@ -1125,12 +1125,12 @@ applyuserspacemode()
 
     if grep -q -F "if [ -x /opt/bin/tailscale ]; then tailscale down; tailscale up; fi" /jffs/scripts/firewall-start; then
       sed -i -e '/tailscale down/d' /jffs/scripts/firewall-start
-      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: firewall-start entries removed." >> "$logfile"
+      echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: firewall-start entries removed." >> "$logfile"
     fi
 
   fi
   inject_s06tailscaled
-  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: Userspace Mode settings have been applied." >> "$logfile"
+  echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Userspace Mode settings have been applied." >> "$logfile"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------

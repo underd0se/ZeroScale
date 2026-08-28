@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# Build script for TAILMON ZER0
+# Build script for ZeroScale
 # Concatenates modular source files into a single deployable script
 
 set -euo pipefail
 
-echo "Building TAILMON ZER0..."
+echo "Building ZeroScale..."
 
-cat src/*.sh > tailmon-zero.sh
-chmod +x tailmon-zero.sh
+cat src/*.sh > zeroscale.sh
+chmod +x zeroscale.sh
 
-echo "Build complete! Output saved to tailmon-zero.sh"
+echo "Build complete! Output saved to zeroscale.sh"

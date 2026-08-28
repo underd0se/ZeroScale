@@ -135,16 +135,16 @@ ScriptUpdateFromAMTM()
     then return 0
     fi
 
-    # Force a TAILMON ZER0 download and update
+    # Force a ZeroScale download and update
     echo ""
-    echo -e "${InvGreen} ${CClear} Downloading latest ${CGreen}TAILMON ZER0${CClear}... Please stand by while we add even more Tailscale goodness..."
-    curl --silent --retry 3 "https://raw.githubusercontent.com/underd0se/TAILMON-Zero/main/tailmon-zero.sh" -o "/jffs/scripts/tailmon-zero.sh" && chmod 755 "/jffs/scripts/tailmon-zero.sh"
+    echo -e "${InvGreen} ${CClear} Downloading latest ${CGreen}ZeroScale${CClear}... Please stand by while we add even more Tailscale goodness..."
+    curl --silent --retry 3 "https://raw.githubusercontent.com/underd0se/ZeroScale/main/zeroscale.sh" -o "/jffs/scripts/zeroscale.sh" && chmod 755 "/jffs/scripts/zeroscale.sh"
     DLsuccess=$?
     if [ "$DLsuccess" -eq 0 ]; then
-      echo -e "${InvGreen} ${CClear} TAILMON ZER0 Download/Update Success."
+      echo -e "${InvGreen} ${CClear} ZeroScale Download/Update Success."
       echo ""
     else
-      echo -e "${InvRed} ${CClear} TAILMON ZER0 Download/Update Failed. Please check all the things."
+      echo -e "${InvRed} ${CClear} ZeroScale Download/Update Failed. Please check all the things."
       echo ""
     fi
 
@@ -226,14 +226,14 @@ drainpendingttyinput()
 
   # Read one character at a time so this also clears a partial pasted line that
   # has not yet received Enter. The final one-second timeout confirms the queue
-  # is empty. BusyBox ash already supports this -n1 form elsewhere in TAILMON ZER0.
+  # is empty. BusyBox ash already supports this -n1 form elsewhere in ZeroScale.
   while IFS= read -r -n 1 -t 1 discarded_input < "$ttydev"; do
     :
   done
 }
 
 # Monitoring Mode requires the complete Entware Tailscale installation, not just
-# a saved TAILMON ZER0 configuration. Keep this check centralized so direct, SCREEN,
+# a saved ZeroScale configuration. Keep this check centralized so direct, SCREEN,
 # and Setup-menu launch paths all enforce the same requirement.
 tailscaleready()
 {
@@ -245,7 +245,7 @@ tailscaleready()
 monitoringblocked()
 {
   echo ""
-  echo -e "${CRed}TAILMON ZER0 Monitoring Mode is unavailable because Tailscale is not fully installed.${CClear}"
+  echo -e "${CRed}ZeroScale Monitoring Mode is unavailable because Tailscale is not fully installed.${CClear}"
   echo -e "Install Tailscale using option 1 before launching Monitoring Mode."
   echo ""
 
@@ -360,39 +360,48 @@ progressbarpause()
 
 legacy_cleanup() {
     clear
-    echo -e "${CRed}WARNING: Legacy TAILMON Installation Detected!${CClear}"
-    echo -e "TAILMON ZER0 cannot run alongside the legacy version of TAILMON."
-    echo -e "Continuing will automatically remove legacy TAILMON files and configurations."
+    echo -e "${CRed}WARNING: Legacy Installation Detected!${CClear}"
+    echo -e "ZeroScale cannot run alongside legacy TAILMON or TAILMON ZER0."
+    echo -e "Continuing will automatically remove legacy files and configurations."
     echo ""
-    if promptyn "Would you like to remove legacy TAILMON and continue setup? [y/n]: "; then
-        echo -e "\n${CGreen}Cleaning up legacy TAILMON...${CClear}"
+    if promptyn "Would you like to remove legacy installations and continue setup? [y/n]: "; then
+        echo -e "\n${CGreen}Cleaning up legacy installations...${CClear}"
         rm -f /jffs/scripts/tailmon.sh.tmp 2>/dev/null
+        rm -f /jffs/scripts/tailmon-zero.sh.tmp 2>/dev/null
         cru d tailmon >/dev/null 2>&1
+        cru d RunTAILMONcheck >/dev/null 2>&1
+        cru d RunTAILMONZER0check >/dev/null 2>&1
         rm -f -r /jffs/addons/tailmon.d >/dev/null 2>&1
+        rm -f -r /jffs/addons/tailmon-zero.d >/dev/null 2>&1
         rm -f /jffs/scripts/tailmon.sh >/dev/null 2>&1
+        rm -f /jffs/scripts/tailmon-zero.sh >/dev/null 2>&1
+        rm -f /opt/bin/tailmon-zer0 2>/dev/null
         sed -i -e '/tailmon\.sh/d' /jffs/scripts/post-mount >/dev/null 2>&1
+        sed -i -e '/tailmon-zero\.sh/d' /jffs/scripts/post-mount >/dev/null 2>&1
         sed -i -e '/tailmon\.sh/d' /jffs/configs/profile.add >/dev/null 2>&1
-        echo -e "${CGreen}Legacy TAILMON removed successfully.${CClear}"
+        sed -i -e '/tailmon-zero\.sh/d' /jffs/configs/profile.add >/dev/null 2>&1
+        sed -i -e '/tailmon-zer0/d' /jffs/configs/profile.add >/dev/null 2>&1
+        echo -e "${CGreen}Legacy files removed successfully.${CClear}"
         sleep 2
     else
-        echo -e "\nSetup aborted. Please manually uninstall legacy TAILMON first."
+        echo -e "\nSetup aborted. Please manually uninstall legacy installations first."
         exit 1
     fi
 }
 
 initialsetup()
 {
-    if [ ! -d "/jffs/addons/tailmon-zero.d" ]; then
-        mkdir -p "/jffs/addons/tailmon-zero.d"
+    if [ ! -d "/jffs/addons/zeroscale.d" ]; then
+        mkdir -p "/jffs/addons/zeroscale.d"
     fi
 
-    if [ -d "/jffs/addons/tailmon.d" ] || [ -f "/jffs/scripts/tailmon.sh" ]; then
+    if [ -d "/jffs/addons/tailmon.d" ] || [ -f "/jffs/scripts/tailmon.sh" ] || [ -d "/jffs/addons/tailmon-zero.d" ] || [ -f "/jffs/scripts/tailmon-zero.sh" ]; then
         legacy_cleanup
     fi
     clear
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} TAILMON ZER0 Initial Setup                                                                 ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Initial Setup                                                                     ${CClear}"
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} TAILMON ZER0 has not been configured yet, and Tailscale will need to be installed and${CClear}"
+    echo -e "${InvGreen} ${CClear} ZeroScale has not been configured yet, and Tailscale will need to be installed and${CClear}"
     echo -e "${InvGreen} ${CClear} configured. You can choose between 'Express Install' and 'Advanced Install'.${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} 1) Express Install will automatically download and install Tailscale, choosing the${CClear}"
@@ -400,7 +409,7 @@ initialsetup()
     echo -e "${InvGreen} ${CClear} subnet by default. A URL prompt will appear which will require you to copy this link"
     echo -e "${InvGreen} ${CClear} into your browser to connect this device to your tailnet."
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} 2) Advanced Install will launch the TAILMON ZER0 Setup/Configuration Menu, and allows${CClear}"
+    echo -e "${InvGreen} ${CClear} 2) Advanced Install will launch the ZeroScale Setup/Configuration Menu, and allows${CClear}"
     echo -e "${InvGreen} ${CClear} you to manually choose your preferred settings, such as 'Kernel' vs. 'Userspace'${CClear}"
     echo -e "${InvGreen} ${CClear} mode, and letting you pick the exit node option along with additional subnets."
     echo -e "${InvGreen} ${CClear}"
@@ -415,13 +424,13 @@ initialsetup()
     read -p "Please select? (1=Express Install, 2=Advanced Install, e=Exit): " SelectSetup
       case $SelectSetup in
         1)
-        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 Express Install initiated." >> "$logfile"
+        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale Express Install initiated." >> "$logfile"
         expressinstall
         return
         ;;
 
         2)
-          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) TAILMON[$$] - INFO: TAILMON ZER0 Advanced Install initiated." >> "$logfile"
+          echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale Advanced Install initiated." >> "$logfile"
           saveconfig
           vsetup
           return

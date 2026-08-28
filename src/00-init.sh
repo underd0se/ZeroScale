@@ -1,13 +1,9 @@
 #!/bin/sh
 
-# TAILMON ZER0 (TAILMON ZER0.SH) is an all-in-one script that is optimized to install, maintain and monitor a Tailscale service and
-# connection from your Asus-Merlin FW router. It provides the basic steps needed to install and implement a successful
-# connection to your tailnet. It allows for 2 different modes of operation: Kernel and Userspace modes. Depending on your
-# needs, you can also enable exit node and subnet route advertisements. Separately, TAILMON ZER0 functions as a Tailscale
-# monitor application that will sit in the background (using the -screen utility), and will restart the Tailscale service
-# should it happen to go down. Many thanks to: @jksmurf, @ColinTaylor, @Aiadi, and @kuki68ster for all their help, input
-# and original testing of this script!
-# Last Updated: 2026-Aug-02
+# ZeroScale (zeroscale.sh) is an all-in-one script that is optimized to install, maintain and monitor a Tailscale service and
+# connection from your Asus-Merlin FW router in swapless environments.
+# Based on TAILMON by Viktor Jaep, licensed under GPLv3.
+# Last Updated: 2026-Aug-28
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
@@ -24,12 +20,12 @@ export SCREENDIR="${HOME}/.screen"
 version="0.2.1"
 beta=0                                                               # Beta indicator on/off
 track=0                                                              # Stable (0) / Beta (1) Track subscription
-apppath="/jffs/scripts/tailmon-zero.sh"                                   # Static path to the app
-config="/jffs/addons/tailmon-zero.d/tailmon-zero.cfg"                          # Static path to the config file
-dlverpath="/jffs/addons/tailmon-zero.d/version.txt"                       # Static path to the version file
-bverpath="/jffs/addons/tailmon-zero.d/beta.txt"                           # Static path to the beta version file
-logfile="/jffs/addons/tailmon-zero.d/tailmon-zero.log"                         # Static path to the log
-tmemails="/jffs/addons/tailmon-zero.d/tmemails.txt"                       # Static path to email rate limit file
+apppath="/jffs/scripts/zeroscale.sh"                                   # Static path to the app
+config="/jffs/addons/zeroscale.d/zeroscale.cfg"                          # Static path to the config file
+dlverpath="/jffs/addons/zeroscale.d/version.txt"                       # Static path to the version file
+bverpath="/jffs/addons/zeroscale.d/beta.txt"                           # Static path to the beta version file
+logfile="/jffs/addons/zeroscale.d/zeroscale.log"                         # Static path to the log
+tmemails="/jffs/addons/zeroscale.d/tmemails.txt"                       # Static path to email rate limit file
 routerboot=0                                                         # Tracking router reboot notifications
 tsinstalled=0
 keepalive=0
@@ -39,7 +35,7 @@ autostart=0
 schedule=0                                                           # Scheduler enable y/n
 schedulehrs=1                                                        # Scheduler hours
 schedulemin=0                                                        # Scheduler mins
-updatetm=0                                                           # Autoupdate TAILMON ZER0 Script
+updatetm=0                                                           # Autoupdate ZeroScale Script
 updatets=0                                                           # Autoupdate Tailscale Binaries
 amtmemailsuccess=0
 amtmemailfailure=0
@@ -95,7 +91,7 @@ doScriptUpdateFromAMTM=true
 cleanup() {
   local exit_code=$?
   rm -f /opt/tmp/tailscaled 2>/dev/null
-  rm -f /jffs/scripts/tailmon-zero.sh.tmp 2>/dev/null
+  rm -f /jffs/scripts/zeroscale.sh.tmp 2>/dev/null
   # Exit cleanly with the original exit code
   exit "$exit_code"
 }
