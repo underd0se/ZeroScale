@@ -1,4 +1,4 @@
-# ZeroScale v0.2.1
+# ZeroScale v1.0.1
 Swapless Tailscale Installer, Configurator and Monitor for Asuswrt-Merlin
 
 ---
@@ -21,7 +21,7 @@ ZeroScale was created to explicitly support Asuswrt-Merlin routers running **wit
 ---
 
 ### Changelog
-**v0.2.1 (Rebranding & Stability Release)**
+**v1.0.1 (Rebranding & Stability Release)**
 - **Rebranded to ZeroScale:** Independent project identity respecting upstream naming guidelines while maintaining proper GPLv3 attribution.
 - **SIGBUS Crash Fix:** Injected `GODEBUG=tlsmlkem=0` to prevent fatal memory alignment crashes on 32-bit ARM routers running Go 1.24+.
 - **Watchdog Race Fix:** Changed keepalive logic to monitor process PID rather than socket status, eliminating false-positive reboot loops during initialization.
