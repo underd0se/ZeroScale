@@ -9,6 +9,28 @@ void show_toast(const char *fmt, ...) {
     g_app.toast_expiry = time(NULL) + 3;
 }
 
+void log_event(const char *level, const char *fmt, ...) {
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    char time_buf[64];
+    strftime(time_buf, sizeof(time_buf), "%b %d %Y %H:%M:%S", tm_info);
+
+    char hostname[64] = "router";
+    gethostname(hostname, sizeof(hostname));
+
+    char msg[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, args);
+    va_end(args);
+
+    FILE *f = fopen("/jffs/addons/zeroscale.d/zeroscale.log", "a");
+    if (!f) return;
+
+    fprintf(f, "%s %s ZEROSCALE[%d] - %s: %s\n", time_buf, hostname, (int)getpid(), level, msg);
+    fclose(f);
+}
+
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
     snprintf(cfg->version, sizeof(cfg->version), "0.2.0");
@@ -40,11 +62,8 @@ void load_config(void) {
         char *key = line;
         char *val = eq + 1;
         
-        size_t len = strlen(val);
-        while (len > 0 && (val[len-1] == '\n' || val[len-1] == '\r' || val[len-1] == '"' || val[len-1] == '\'')) {
-            val[--len] = '\0';
-        }
-        if (*val == '"' || *val == '\'') val++;
+        val[strcspn(val, "\r\n\"")] = 0;
+        if (*val == '"') val++;
 
         if (strcmp(key, "timerloop") == 0) cfg->timerloop = atoi(val);
         else if (strcmp(key, "keepalive") == 0) cfg->keepalive = atoi(val);
@@ -91,17 +110,20 @@ void save_config(void) {
     fprintf(f, "routes=\"%s\"\n", cfg->routes);
 
     fclose(f);
+    log_event("INFO", "ZeroScale config has been updated.");
 }
 
 void toggle_keepalive(void) {
     g_app.config.keepalive = !g_app.config.keepalive;
     save_config();
+    log_event("INFO", "Watchdog keepalive %s.", g_app.config.keepalive ? "enabled" : "disabled");
     show_toast("Watchdog Keepalive: %s", g_app.config.keepalive ? "Enabled" : "Disabled");
 }
 
 void toggle_persistentsettings(void) {
     g_app.config.persistentsettings = !g_app.config.persistentsettings;
     save_config();
+    log_event("INFO", "Persistent settings %s.", g_app.config.persistentsettings ? "enabled" : "disabled");
     show_toast("Persistent Settings: %s", g_app.config.persistentsettings ? "Enabled" : "Disabled");
 }
 
@@ -109,30 +131,33 @@ void toggle_autostart(void) {
     g_app.config.autostart = !g_app.config.autostart;
     if (g_app.config.autostart) {
         system("if [ -f /jffs/scripts/post-mount ]; then "
-               "  if ! grep -q 'zeroscale.sh -screen' /jffs/scripts/post-mount; then "
-               "    echo '(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale' >> /jffs/scripts/post-mount; "
+               "  if ! grep -q 'zeroscale-tui' /jffs/scripts/post-mount; then "
+               "    echo '(sleep 30 && /opt/etc/init.d/S06tailscaled start) & # Added by ZeroScale' >> /jffs/scripts/post-mount; "
                "  fi; "
                "else "
                "  echo '#!/bin/sh' > /jffs/scripts/post-mount; "
-               "  echo '(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale' >> /jffs/scripts/post-mount; "
+               "  echo '(sleep 30 && /opt/etc/init.d/S06tailscaled start) & # Added by ZeroScale' >> /jffs/scripts/post-mount; "
                "  chmod 755 /jffs/scripts/post-mount; "
                "fi");
     } else {
-        system("sed -i -e '/zeroscale\\.sh/d' -e '/tailmon/d' /jffs/scripts/post-mount 2>/dev/null");
+        system("sed -i -e '/zeroscale/d' -e '/tailmon/d' -e '/S06tailscaled/d' /jffs/scripts/post-mount 2>/dev/null");
     }
     save_config();
+    log_event("INFO", "Autostart on boot %s.", g_app.config.autostart ? "enabled" : "disabled");
     show_toast("Autostart on Boot: %s", g_app.config.autostart ? "Enabled" : "Disabled");
 }
 
 void toggle_exitnode(void) {
     g_app.config.exitnode = !g_app.config.exitnode;
     save_config();
+    log_event("INFO", "%s.", g_app.config.exitnode ? "Device configured as Exit Node" : "Exit Node configuration disabled");
     show_toast("Advertise as Exit Node: %s", g_app.config.exitnode ? "Enabled" : "Disabled");
 }
 
 void toggle_advroutes(void) {
     g_app.config.advroutes = !g_app.config.advroutes;
     save_config();
+    log_event("INFO", "Subnet Routes advertisement %s.", g_app.config.advroutes ? "enabled" : "disabled");
     show_toast("Advertise Subnet Routes: %s (%s)", g_app.config.advroutes ? "Enabled" : "Disabled", g_app.config.routes);
 }
 
@@ -146,6 +171,7 @@ void cycle_timerloop(void) {
 
     g_app.countdown = g_app.config.timerloop;
     save_config();
+    log_event("INFO", "Status check interval set to %ds.", g_app.config.timerloop);
     show_toast("Status Check Interval: %ds", g_app.config.timerloop);
 }
 
@@ -171,11 +197,13 @@ void cycle_amtm_email(void) {
         show_toast("Email Alerts: Disabled");
     }
     save_config();
+    log_event("INFO", "AMTM Email alert configuration updated.");
 }
 
 void cycle_schedule(void) {
     g_app.config.schedule = !g_app.config.schedule;
     save_config();
+    log_event("INFO", "Autoupdate schedule %s.", g_app.config.schedule ? "enabled @ 01:00" : "disabled");
     show_toast("Autoupdate Schedule: %s", g_app.config.schedule ? "Enabled @ 01:00" : "Disabled");
 }
 
@@ -188,11 +216,13 @@ void cycle_opmode(void) {
         show_toast("Operating Mode: Userspace");
     }
     save_config();
+    log_event("INFO", "Operating mode set to %s.", g_app.config.opmode);
 }
 
 void switch_track(void) {
     g_app.config.track = !g_app.config.track;
     save_config();
+    log_event("INFO", "Release track switched to: %s.", g_app.config.track ? "Beta" : "Stable");
     show_toast("Track switched to: %s", g_app.config.track ? "Beta" : "Stable");
 }
 

@@ -31,12 +31,15 @@ void app_init(void) {
     g_app.countdown = g_app.config.timerloop > 0 ? g_app.config.timerloop : 60;
     g_app.last_tick = time(NULL);
     g_app.last_status_refresh = time(NULL);
+
+    log_event("INFO", "ZeroScale C-TUI v%s session started.", g_app.config.version);
 }
 
 void app_cleanup(void) {
     // Centered exit splash sequence
     show_splash("SHUTTING DOWN...", 350, TB_YELLOW | TB_BOLD);
     show_splash("GOODBYE...", 500, TB_HI_BLACK);
+    log_event("INFO", "ZeroScale C-TUI session ended.");
     tb_shutdown();
 }
 
@@ -62,6 +65,7 @@ void request_input(InputTarget target, const char *title, const char *prompt, co
 
 void execute_action(const char *action, const char *cmd) {
     show_toast("%s", action);
+    log_event("INFO", "%s", action);
     char buf[512];
     snprintf(buf, sizeof(buf), "%s >/dev/null 2>&1 &", cmd);
     system(buf);
@@ -426,11 +430,13 @@ static void save_input_action(void) {
     if (g_app.input_target == INPUT_ROUTES) {
         snprintf(g_app.config.routes, sizeof(g_app.config.routes), "%s", g_app.input_buf);
         save_config();
+        log_event("INFO", "Subnet Routes updated to: %s", g_app.config.routes);
         show_toast("Subnet Routes updated to: %s", g_app.config.routes);
     } else if (g_app.input_target == INPUT_LOGSIZE) {
         int size = atoi(g_app.input_buf);
         g_app.config.logsize = size;
         save_config();
+        log_event("INFO", "Log retention updated to: %d rows.", g_app.config.logsize);
         show_toast("Log Retention updated to: %d rows", g_app.config.logsize);
     }
     g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
@@ -518,6 +524,7 @@ static void execute_confirm_action(void) {
     char buf[512];
     snprintf(buf, sizeof(buf), "%s >/dev/null 2>&1 &", g_app.confirm_cmd);
     system(buf);
+    log_event("INFO", "Executed action: %s (%s)", g_app.confirm_action_label, g_app.confirm_cmd);
     show_toast("Action executed.");
     g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
     refresh_tailscale_status();

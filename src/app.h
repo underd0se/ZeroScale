@@ -135,6 +135,7 @@ void load_config(void);
 void save_config(void);
 void refresh_tailscale_status(void);
 void load_logs(void);
+void log_event(const char *level, const char *fmt, ...);
 void show_toast(const char *fmt, ...);
 void show_splash(const char *status_msg, int duration_ms, uint32_t color);
 void request_confirm(const char *prompt, const char *action_label, const char *cmd);
