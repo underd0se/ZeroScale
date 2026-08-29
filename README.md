@@ -1,13 +1,12 @@
 # ZeroScale
-
-> **High-performance, swapless Tailscale manager & live monitor for Asuswrt-Merlin routers.**
+## **High-performance, swapless Tailscale manager & live monitor for Asuswrt-Merlin routers.**
 
 > [!NOTE]
 > **Attribution & Origin:** ZeroScale is based on and inspired by [TAILMON](https://github.com/ViktorJp/TAILMON) originally created by **Viktor Jaep** (licensed under GPLv3). ZeroScale is an independently developed, standalone evolution engineered specifically for swapless, zero-overhead Tailscale monitoring and management on Asuswrt-Merlin routers.
 
 ---
 
-## ⚡ The ZeroScale Promise: 100% Swapless Monitoring
+## 100% Swapless Tailscale Management & Monitoring
 
 Running modern Go-based services like Tailscale on embedded, memory-constrained Asus routers has traditionally required dedicated USB swap partitions to prevent memory exhaustion, out-of-memory (OOM) kernel kills, and fork failures.
 
@@ -38,6 +37,8 @@ Running modern Go-based services like Tailscale on embedded, memory-constrained 
 ## ✨ Features
 
 ### 1. 🖥️ Live Monitor Dashboard (`VIEW_DASHBOARD`)
+<img width="1552" height="982" alt="Dashboard" src="https://github.com/user-attachments/assets/20ffb87e-095b-4a0d-8ff2-2d979da514b0" />
+
 * **Real-time Status Cards:** Live indicators for Daemon status, Tailnet connectivity, Operating Mode (`Userspace` / `Kernel`), Watchdog Keepalive state, Exit Node advertisement, and advertised Subnet Routes.
 * **Interactive Action Bar:** Dynamic action buttons with instant keyboard shortcuts (`u`, `d`, `r`, `s`, `t`, `l`, `c`, `q`) and arrow navigation (`←`/`→`).
 * **Color-Coded Peer Topology:**
@@ -49,7 +50,9 @@ Running modern Go-based services like Tailscale on embedded, memory-constrained 
 * **Smooth Scrolling:** Scroll through large peer lists with the mouse wheel or arrow keys.
 
 ### 2. 🔍 Modal Peer Inspector (`VIEW_PEER_DETAIL`)
-* Select any peer with mouse click or `Enter` to open a floating, bordered modal inspector.
+<img width="1552" height="982" alt="Peer Detail" src="https://github.com/user-attachments/assets/177f1f40-a568-405e-b4cf-d0d874f86487" />
+
+* Select any peer with mouse click or `Enter` to open a floating, bordered modal inspector. 
 * Inspect Node Name, Tailscale IP, OS Platform, Account Owner, Connection Endpoint (Direct vs. DERP Relay), and real-time Tailnet status.
 * Interactive actions directly inside modal:
   * Press `p`: Instant ICMP ping test.
@@ -57,6 +60,8 @@ Running modern Go-based services like Tailscale on embedded, memory-constrained 
   * Press `c` / `Esc`: Close inspector.
 
 ### 3. ⚙️ Unified Configuration & Service Management (`VIEW_CONFIG`)
+<img width="1552" height="982" alt="Config" src="https://github.com/user-attachments/assets/fccb97a3-b09a-4d49-a71c-c2050374fdc8" />
+
 Consolidated, interactive settings management with instant persistence to `/jffs/addons/zeroscale.d/zeroscale.cfg`:
 * **Section 1: Daemon & Health Monitor** — Toggle Watchdog Keepalive, Persistent Settings, and Boot Autostart (`/jffs/scripts/post-mount`).
 * **Section 2: Tailscale Routing & Mode** — Toggle `Userspace` ⟷ `Kernel` mode, Exit Node advertisement, Subnet Routes advertisement, and interactive Subnet CIDR editor.
@@ -65,6 +70,9 @@ Consolidated, interactive settings management with instant persistence to `/jffs
 * **Section 5: Binary & Maintenance** — Check & update Tailscale binaries, reset daemon state, and run safe install/reinstall/uninstall workflows.
 
 ### 4. 📜 Full-Screen Event Log Viewer (`VIEW_LOGS`)
+
+<img width="1552" height="982" alt="Log Viewer" src="https://github.com/user-attachments/assets/d388df8b-be5f-4fc2-b1f5-c9b711cc86c6" />
+
 * Real-time logging of all configuration changes and daemon events directly to `/jffs/addons/zeroscale.d/zeroscale.log`.
 * Syntax highlighting for log levels (`INFO`, `WARN`, `FAIL`, `ONLINE`).
 * Opens directly to the most recent log entries filling the entire screen.
@@ -72,19 +80,7 @@ Consolidated, interactive settings management with instant persistence to `/jffs
 
 ---
 
-## 📦 Asus Router Binary Releases
-
-ZeroScale binaries are compiled statically using `musl-libc`, guaranteeing standalone execution on Asuswrt-Merlin without external dependencies:
-
-| Release Artifact | Target Architecture | Compatible Asus Router Models |
-|:---|:---|:---|
-| [`zeroscale-v0.2.1-armv7-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-armv7-linux-musl) | `armv7l` (32-bit ARM Cortex-A7/A9/A15) | RT-AX86U, RT-AC86U, RT-AC68U, RT-AX58U, RT-AX56U |
-| [`zeroscale-v0.2.1-arm64-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-arm64-linux-musl) | `aarch64` (64-bit ARM Cortex-A53/A72) | RT-AX88U Pro, GT-AXE16000, GT6, RT-BE96U, GT-BE98 |
-
----
-
 ## 🛠️ Universal Installation on Asuswrt-Merlin
-
 Run the following one-line installer on your router over SSH. It **automatically detects your router's architecture** (ARMv7 vs ARM64) and **migrates any existing Tailmon settings**:
 
 ```sh
@@ -94,17 +90,7 @@ curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/install.sh
 > [!TIP]
 > **Existing Tailmon Users:** The installer automatically detects `/jffs/addons/tailmon.d/tailmon.cfg`, migrates your routing and exit-node settings to `zeroscale.cfg`, cleans up old boot hooks, and creates a `/opt/bin/tailmon` compatibility alias.
 
-### Manual Download (Alternative)
-
 ```sh
-# For 32-bit ARMv7 routers (RT-AX86U, RT-AC86U, RT-AC68U):
-curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-armv7-linux-musl \
-  -o /jffs/scripts/zeroscale && chmod 755 /jffs/scripts/zeroscale && ln -sf /jffs/scripts/zeroscale /opt/bin/zeroscale
-
-# For 64-bit ARM64 routers (RT-AX88U Pro, GT-AXE16000, GT6):
-# curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-arm64-linux-musl \
-#   -o /jffs/scripts/zeroscale && chmod 755 /jffs/scripts/zeroscale && ln -sf /jffs/scripts/zeroscale /opt/bin/zeroscale
-
 # Launch ZeroScale
 zeroscale
 ```
