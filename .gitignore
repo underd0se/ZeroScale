@@ -4,6 +4,8 @@ reboot_monitor.sh
 parse_log.py
 
 # C-TUI Build Artifacts
-tui/bin/
+tui/bin/*
+!tui/bin/release/
+!tui/bin/release/**
 tui/src/*.o
 *.o

@@ -64,8 +64,8 @@ ZeroScale C-TUI binaries are compiled statically using `musl-libc`, guaranteeing
 
 | Release Artifact | Target Architecture | Compatible Asus Router Models |
 |:---|:---|:---|
-| `zeroscale-tui-v0.1.0-armv7-linux-musl` | `armv7l` (32-bit ARM Cortex-A7/A9/A15) | RT-AX86U, RT-AC86U, RT-AC68U, RT-AX58U, RT-AX56U |
-| `zeroscale-tui-v0.1.0-arm64-linux-musl` | `aarch64` (64-bit ARM Cortex-A53/A72) | RT-AX88U Pro, GT-AXE16000, GT6, RT-BE96U, GT-BE98 |
+| [`zeroscale-tui-v0.1.0-armv7-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/c-tui/tui/bin/release/zeroscale-tui-v0.1.0-armv7-linux-musl) | `armv7l` (32-bit ARM Cortex-A7/A9/A15) | RT-AX86U, RT-AC86U, RT-AC68U, RT-AX58U, RT-AX56U |
+| [`zeroscale-tui-v0.1.0-arm64-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/c-tui/tui/bin/release/zeroscale-tui-v0.1.0-arm64-linux-musl) | `aarch64` (64-bit ARM Cortex-A53/A72) | RT-AX88U Pro, GT-AXE16000, GT6, RT-BE96U, GT-BE98 |
 
 ---
 
