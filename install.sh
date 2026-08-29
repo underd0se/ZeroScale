@@ -1,6 +1,6 @@
 #!/bin/sh
 # =========================================================================================================================
-# ZeroScale C-TUI Universal Installer for Asuswrt-Merlin
+# ZeroScale Universal Installer for Asuswrt-Merlin
 # Automatically detects router architecture (ARMv7 vs ARM64) and migrates legacy Tailmon setups.
 # =========================================================================================================================
 
@@ -11,7 +11,7 @@ export PATH="/opt/bin:/opt/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PATH:-}"
 REPO_RAW_URL="https://raw.githubusercontent.com/underd0se/ZeroScale/main"
 VERSION="v0.2.0"
 INSTALL_DIR="/jffs/scripts"
-TARGET_BIN="${INSTALL_DIR}/zeroscale-tui"
+TARGET_BIN="${INSTALL_DIR}/zeroscale"
 CONFIG_DIR="/jffs/addons/zeroscale.d"
 LEGACY_DIR="/jffs/addons/tailmon.d"
 POST_MOUNT="/jffs/scripts/post-mount"
@@ -61,15 +61,15 @@ printf "%b[*] Detecting router architecture: %s%b\n" "${C_CYAN}" "${ARCH}" "${C_
 
 case "${ARCH}" in
     armv7l|armv7|arm)
-        RELEASE_FILE="zeroscale-tui-${VERSION}-armv7-linux-musl"
+        RELEASE_FILE="zeroscale-${VERSION}-armv7-linux-musl"
         ARCH_NAME="ARMv7 (32-bit)"
         ;;
     aarch64|arm64)
-        RELEASE_FILE="zeroscale-tui-${VERSION}-arm64-linux-musl"
+        RELEASE_FILE="zeroscale-${VERSION}-arm64-linux-musl"
         ARCH_NAME="ARM64 (64-bit)"
         ;;
     *)
-        printf "%b[!] Error: Unsupported CPU architecture '%s'. ZeroScale C-TUI supports ARMv7 and ARM64 Asus routers.%b\n" "${C_RED}" "${ARCH}" "${C_RESET}"
+        printf "%b[!] Error: Unsupported CPU architecture '%s'. ZeroScale supports ARMv7 and ARM64 Asus routers.%b\n" "${C_RED}" "${ARCH}" "${C_RESET}"
         exit 1
         ;;
 esac
@@ -108,9 +108,9 @@ fi
 # Step 4: Download Binary Release
 
 DOWNLOAD_URL="${REPO_RAW_URL}/bin/release/${RELEASE_FILE}"
-TMP_BIN="/tmp/zeroscale-tui.tmp"
+TMP_BIN="/tmp/zeroscale.tmp"
 
-printf "%b[*] Downloading ZeroScale C-TUI (%s)...%b\n" "${C_CYAN}" "${RELEASE_FILE}" "${C_RESET}"
+printf "%b[*] Downloading ZeroScale (%s)...%b\n" "${C_CYAN}" "${RELEASE_FILE}" "${C_RESET}"
 
 if which curl >/dev/null 2>&1; then
     curl -fsSL "${DOWNLOAD_URL}" -o "${TMP_BIN}"
@@ -141,7 +141,6 @@ mv -f "${TMP_BIN}" "${TARGET_BIN}"
 
 # Create convenience symlinks in /opt/bin
 if [ -d "/opt/bin" ]; then
-    ln -sf "${TARGET_BIN}" "/opt/bin/zeroscale-tui"
     ln -sf "${TARGET_BIN}" "/opt/bin/zeroscale"
     ln -sf "${TARGET_BIN}" "/opt/bin/tailmon"
 fi
@@ -150,7 +149,7 @@ fi
 # Step 6: Installation Complete
 
 printf "\n%b================================================================%b\n" "${C_GREEN}" "${C_RESET}"
-printf "%b  ZeroScale C-TUI %s installed successfully!%b\n" "${C_GREEN}" "${VERSION}" "${C_RESET}"
+printf "%b  ZeroScale %s installed successfully!%b\n" "${C_GREEN}" "${VERSION}" "${C_RESET}"
 printf "%b================================================================%b\n\n" "${C_GREEN}" "${C_RESET}"
 printf "To launch the interface, run:\n\n"
-printf "  %bzeroscale-tui%b  (or simply %bzeroscale%b)\n\n" "${C_BOLD}" "${C_RESET}" "${C_BOLD}" "${C_RESET}"
+printf "  %bzeroscale%b\n\n" "${C_BOLD}" "${C_RESET}"

@@ -1,6 +1,6 @@
-# Contributing to ZeroScale C-TUI
+# Contributing to ZeroScale
 
-We're thrilled that you're interested in contributing to ZeroScale! This document provides a set of guidelines for contributing to ZeroScale C-TUI.
+We're thrilled that you're interested in contributing to ZeroScale! This document provides a set of guidelines for contributing to ZeroScale.
 
 ZeroScale is licensed under GPLv3 and is based on [TAILMON](https://github.com/ViktorJp/TAILMON) by Viktor Jaep.
 

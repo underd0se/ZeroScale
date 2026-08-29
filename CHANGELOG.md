@@ -1,6 +1,6 @@
-# Changelog ─ ZeroScale C-TUI
+# Changelog ─ ZeroScale
 
-All notable changes to the ZeroScale C-TUI project are documented in this file.
+All notable changes to the ZeroScale project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎨 Major UI Overhaul & Complete Keyboard Navigation
 
-ZeroScale C-TUI `v0.2.0` introduces complete full-keyboard navigation across all views, a major visual UI overhaul with streamlined button hierarchy, and resilient daemon installation/update workflows.
+ZeroScale `v0.2.0` introduces complete full-keyboard navigation across all views, a major visual UI overhaul with streamlined button hierarchy, and resilient daemon installation/update workflows.
 
 #### 🌟 Added & Enhanced
 * **Streamlined UI & Dynamic Button Hierarchy:**
@@ -38,7 +38,7 @@ ZeroScale C-TUI `v0.2.0` introduces complete full-keyboard navigation across all
 
 ### 🚀 Initial Public Release
 
-ZeroScale C-TUI `v0.1.0` is the first native C99 implementation of the ZeroScale Tailscale manager for Asuswrt-Merlin routers.
+ZeroScale `v0.1.0` is the first native C99 implementation of the ZeroScale Tailscale manager for Asuswrt-Merlin routers.
 
 #### 🌟 Added
 * **Native C99 Engine:** Single-header `termbox2` backend delivering high-performance, double-buffered differential rendering with 0% screen flicker and 0% CPU consumption during idle polling.

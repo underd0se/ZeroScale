@@ -131,7 +131,7 @@ void toggle_autostart(void) {
     g_app.config.autostart = !g_app.config.autostart;
     if (g_app.config.autostart) {
         system("if [ -f /jffs/scripts/post-mount ]; then "
-               "  if ! grep -q 'zeroscale-tui' /jffs/scripts/post-mount; then "
+               "  if ! grep -q 'S06tailscaled start' /jffs/scripts/post-mount; then "
                "    echo '(sleep 30 && /opt/etc/init.d/S06tailscaled start) & # Added by ZeroScale' >> /jffs/scripts/post-mount; "
                "  fi; "
                "else "

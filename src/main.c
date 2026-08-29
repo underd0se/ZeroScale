@@ -32,14 +32,14 @@ void app_init(void) {
     g_app.last_tick = time(NULL);
     g_app.last_status_refresh = time(NULL);
 
-    log_event("INFO", "ZeroScale C-TUI v%s session started.", g_app.config.version);
+    log_event("INFO", "ZeroScale v%s session started.", g_app.config.version);
 }
 
 void app_cleanup(void) {
     // Centered exit splash sequence
     show_splash("SHUTTING DOWN...", 350, TB_YELLOW | TB_BOLD);
     show_splash("GOODBYE...", 500, TB_HI_BLACK);
-    log_event("INFO", "ZeroScale C-TUI session ended.");
+    log_event("INFO", "ZeroScale session ended.");
     tb_shutdown();
 }
 
@@ -289,7 +289,7 @@ static void trigger_config_action(int idx) {
         case 14:
             request_confirm("Completely uninstall ZeroScale from router?",
                             "Uninstall",
-                            "killall -9 zeroscale-tui 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' -e '/tailmon/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui");
+                            "killall -9 zeroscale 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' -e '/tailmon/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale /opt/bin/zeroscale /opt/bin/tailmon");
             break;
         default: break;
     }
@@ -614,8 +614,8 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale C-TUI v0.2.0\n");
-            printf("Usage: zeroscale-tui [options]\n\n");
+            printf("ZeroScale v0.2.0\n");
+            printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -i, --install      Install Entware Tailscale and ZeroScale services\n");
             printf("  -u, --uninstall    Uninstall ZeroScale and cleanup crontab/init entries\n");
