@@ -401,13 +401,18 @@ static void draw_unified_config_view(void) {
     tb_printf(2, 12, (cur == 5) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 5) ? "▶" : " ");
     tb_printf(4, 12, TB_GREEN | TB_BOLD, 0, "(6)");
     tb_printf(7, 12, TB_WHITE, 0, " Advertise Subnet Routes        : ");
-    if (cfg->advroutes) tb_printf(41, 12, TB_GREEN | TB_BOLD, 0, "Enabled (%s)", cfg->routes);
-    else tb_printf(41, 12, TB_HI_BLACK, 0, "Disabled");
+    if (cfg->advroutes) {
+        if (strlen(cfg->routes) > 0) tb_printf(41, 12, TB_GREEN | TB_BOLD, 0, "Enabled (%s)", cfg->routes);
+        else tb_printf(41, 12, TB_GREEN | TB_BOLD, 0, "Enabled");
+    } else {
+        tb_printf(41, 12, TB_HI_BLACK, 0, "Disabled");
+    }
 
     tb_printf(2, 13, (cur == 6) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 6) ? "▶" : " ");
     tb_printf(4, 13, TB_GREEN | TB_BOLD, 0, "(7)");
     tb_printf(7, 13, TB_WHITE, 0, " Edit Subnet Route CIDR         : ");
-    tb_printf(41, 13, TB_YELLOW | TB_BOLD, 0, "%s", cfg->routes);
+    if (strlen(cfg->routes) > 0) tb_printf(41, 13, TB_YELLOW | TB_BOLD, 0, "%s", cfg->routes);
+    else tb_printf(41, 13, TB_HI_BLACK, 0, "None");
 
     // Section 3: INTERFACE & LOGGING
     tb_printf(2, 15, TB_WHITE | TB_BOLD, 0, "INTERFACE & LOGGING");
@@ -502,13 +507,15 @@ static void draw_peer_detail_modal(void) {
     draw_modal_row(start_x, start_y + 6, box_w, "Connection", p->relay_info, p->is_direct ? (TB_GREEN | TB_BOLD) : TB_YELLOW, TB_HI_BLACK);
     draw_modal_row(start_x, start_y + 7, box_w, "Tailnet Status", p->status, p->is_online ? (TB_GREEN | TB_BOLD) : TB_HI_BLACK, TB_HI_BLACK);
 
+    tb_printf(start_x + 3, start_y + 9, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
+
     for (int x = start_x + 1; x < start_x + box_w - 1; x++) {
-        tb_printf(x, start_y + 9, TB_WHITE, TB_HI_BLACK, "─");
+        tb_printf(x, start_y + 10, TB_WHITE, TB_HI_BLACK, "─");
     }
 
-    draw_modal_btn(start_x + 3, start_y + 11, "Ping", 0, 1, 0);
-    draw_modal_btn(start_x + 15, start_y + 11, "Tailscale Ping", 0, 1, 0);
-    draw_modal_btn(start_x + 38, start_y + 11, "Close", 0, 0, 0);
+    draw_modal_btn(start_x + 3, start_y + 11, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
+    draw_modal_btn(start_x + 13, start_y + 11, "Tailscale Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
+    draw_modal_btn(start_x + 34, start_y + 11, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
     tb_set_cell(start_x + box_w - 1, start_y + 11, 0x2502 /* │ */, TB_CYAN | TB_BOLD, TB_HI_BLACK);
 }
 

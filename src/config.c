@@ -33,7 +33,7 @@ void log_event(const char *level, const char *fmt, ...) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.2.0");
+    snprintf(cfg->version, sizeof(cfg->version), "0.2.1");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     cfg->timerloop = 60;
     cfg->keepalive = 1;
@@ -61,9 +61,13 @@ void load_config(void) {
         *eq = '\0';
         char *key = line;
         char *val = eq + 1;
-        
-        val[strcspn(val, "\r\n\"")] = 0;
-        if (*val == '"') val++;
+        // Trim leading whitespace and quotes
+        while (*val == ' ' || *val == '\t' || *val == '"' || *val == '\'') val++;
+        // Trim trailing whitespace, newline, and quotes
+        size_t len = strlen(val);
+        while (len > 0 && (val[len - 1] == '\r' || val[len - 1] == '\n' || val[len - 1] == ' ' || val[len - 1] == '\t' || val[len - 1] == '"' || val[len - 1] == '\'')) {
+            val[--len] = '\0';
+        }
 
         if (strcmp(key, "timerloop") == 0) cfg->timerloop = atoi(val);
         else if (strcmp(key, "keepalive") == 0) cfg->keepalive = atoi(val);
@@ -79,10 +83,17 @@ void load_config(void) {
         else if (strcmp(key, "schedulehrs") == 0) cfg->schedulehrs = atoi(val);
         else if (strcmp(key, "schedulemin") == 0) cfg->schedulemin = atoi(val);
         else if (strcmp(key, "track") == 0) cfg->track = atoi(val);
-        else if (strcmp(key, "routes") == 0) snprintf(cfg->routes, sizeof(cfg->routes), "%s", val);
-        else if (strcmp(key, "tsoperatingmode") == 0) snprintf(cfg->opmode, sizeof(cfg->opmode), "%s", val);
+        else if (strcmp(key, "routes") == 0 && strlen(val) > 0) snprintf(cfg->routes, sizeof(cfg->routes), "%s", val);
+        else if (strcmp(key, "tsoperatingmode") == 0 && strlen(val) > 0) snprintf(cfg->opmode, sizeof(cfg->opmode), "%s", val);
     }
     fclose(f);
+
+    if (strlen(cfg->routes) == 0) {
+        snprintf(cfg->routes, sizeof(cfg->routes), "192.168.50.0/24");
+    }
+    if (strlen(cfg->opmode) == 0) {
+        snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
+    }
 }
 
 void save_config(void) {

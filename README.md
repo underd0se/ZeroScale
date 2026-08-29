@@ -78,8 +78,8 @@ ZeroScale binaries are compiled statically using `musl-libc`, guaranteeing stand
 
 | Release Artifact | Target Architecture | Compatible Asus Router Models |
 |:---|:---|:---|
-| [`zeroscale-v0.2.0-armv7-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.0-armv7-linux-musl) | `armv7l` (32-bit ARM Cortex-A7/A9/A15) | RT-AX86U, RT-AC86U, RT-AC68U, RT-AX58U, RT-AX56U |
-| [`zeroscale-v0.2.0-arm64-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.0-arm64-linux-musl) | `aarch64` (64-bit ARM Cortex-A53/A72) | RT-AX88U Pro, GT-AXE16000, GT6, RT-BE96U, GT-BE98 |
+| [`zeroscale-v0.2.1-armv7-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-armv7-linux-musl) | `armv7l` (32-bit ARM Cortex-A7/A9/A15) | RT-AX86U, RT-AC86U, RT-AC68U, RT-AX58U, RT-AX56U |
+| [`zeroscale-v0.2.1-arm64-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-arm64-linux-musl) | `aarch64` (64-bit ARM Cortex-A53/A72) | RT-AX88U Pro, GT-AXE16000, GT6, RT-BE96U, GT-BE98 |
 
 ---
 
@@ -98,11 +98,11 @@ curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/install.sh
 
 ```sh
 # For 32-bit ARMv7 routers (RT-AX86U, RT-AC86U, RT-AC68U):
-curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.0-armv7-linux-musl \
+curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-armv7-linux-musl \
   -o /jffs/scripts/zeroscale && chmod 755 /jffs/scripts/zeroscale && ln -sf /jffs/scripts/zeroscale /opt/bin/zeroscale
 
 # For 64-bit ARM64 routers (RT-AX88U Pro, GT-AXE16000, GT6):
-# curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.0-arm64-linux-musl \
+# curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-v0.2.1-arm64-linux-musl \
 #   -o /jffs/scripts/zeroscale && chmod 755 /jffs/scripts/zeroscale && ln -sf /jffs/scripts/zeroscale /opt/bin/zeroscale
 
 # Launch ZeroScale

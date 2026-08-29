@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1] - 2026-08-29
+
+### 🔧 Fixes & Accessibility Polish
+
+ZeroScale `v0.2.1` resolves configuration parsing issues, adds full keyboard accessibility to the Peer Node Inspector modal, implements live syslog event recording, and simplifies binary and command naming.
+
+#### 🌟 Added & Fixed
+* **Peer Node Inspector Keyboard & Mouse Navigation (`VIEW_PEER_DETAIL`):**
+  * Full keyboard accessibility: cycle through `Ping`, `Tailscale Ping`, and `Close` buttons with `←` / `→` or `Tab`, and execute with `Enter` / `Space`.
+  * Dedicated direct shortcuts (`p`, `t`, `c`/`Esc`) remain active for power users.
+  * Added subtle navigation hint typography.
+  * Added left-click mouse support for all modal buttons.
+* **Subnet Routes String Parser Fix:**
+  * Fixed quote-trimming parser in `load_config` that previously truncated quoted values (`routes="192.168.x.x/24"`), resolving the empty parentheses issue on the configuration screen.
+  * Added safe fallback to router LAN subnet.
+* **Live Event Logger (`zeroscale.log`):**
+  * Integrated native syslog-style event logging (`log_event`) across daemon operations, configuration updates, and session lifecycles.
+* **Streamlined Naming:**
+  * Standardized single executable command to `zeroscale` (with backward-compatibility symlink to `tailmon`).
+
+---
+
 ## [0.2.0] - 2026-08-29
 
 ### 🎨 Major UI Overhaul & Complete Keyboard Navigation

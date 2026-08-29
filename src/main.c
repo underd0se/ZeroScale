@@ -185,6 +185,7 @@ static void handle_dashboard_key(struct tb_event *ev) {
             trigger_header_action(g_app.header_selected_idx);
         } else if (g_app.dash_focus == FOCUS_PEERS || g_app.selected_peer >= 0) {
             if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+                g_app.peer_detail_selected_btn = 0;
                 g_app.mode = VIEW_PEER_DETAIL;
             }
         }
@@ -234,6 +235,7 @@ static void handle_dashboard_mouse(struct tb_event *ev) {
             if (clicked_idx < g_app.peer_count) {
                 g_app.dash_focus = FOCUS_PEERS;
                 if (g_app.selected_peer == clicked_idx) {
+                    g_app.peer_detail_selected_btn = 0;
                     g_app.mode = VIEW_PEER_DETAIL;
                 } else {
                     g_app.selected_peer = clicked_idx;
@@ -361,26 +363,75 @@ static void handle_config_mouse(struct tb_event *ev) {
 // -------------------------------------------------------------------------------------------------------------------------
 // View: Peer Detail Modal Handlers
 
+static void do_peer_ping(void) {
+    if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+        char cmd[256];
+        snprintf(cmd, sizeof(cmd), "ping -c 3 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
+        show_toast("Pinging %s (%s)...", g_app.peers[g_app.selected_peer].name, g_app.peers[g_app.selected_peer].ip);
+        int res = system(cmd);
+        if (res == 0) show_toast("Ping to %s: SUCCESS (Host Online)", g_app.peers[g_app.selected_peer].name);
+        else show_toast("Ping to %s: FAILED / TIMEOUT", g_app.peers[g_app.selected_peer].name);
+    }
+}
+
+static void do_peer_ts_ping(void) {
+    if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+        char cmd[256];
+        snprintf(cmd, sizeof(cmd), "tailscale ping -c 1 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
+        show_toast("Testing Tailscale WireGuard latency to %s...", g_app.peers[g_app.selected_peer].name);
+        int res = system(cmd);
+        if (res == 0) show_toast("Tailscale Ping to %s: Connected!", g_app.peers[g_app.selected_peer].name);
+        else show_toast("Tailscale Ping to %s: Unreachable", g_app.peers[g_app.selected_peer].name);
+    }
+}
+
 static void handle_peer_detail_key(struct tb_event *ev) {
     if (ev->key == TB_KEY_ESC || ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q') {
         g_app.mode = VIEW_DASHBOARD;
     } else if (ev->ch == 'p' || ev->ch == 'P') {
-        if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
-            char cmd[256];
-            snprintf(cmd, sizeof(cmd), "ping -c 3 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
-            show_toast("Pinging %s (%s)...", g_app.peers[g_app.selected_peer].name, g_app.peers[g_app.selected_peer].ip);
-            int res = system(cmd);
-            if (res == 0) show_toast("Ping to %s: SUCCESS (Host Online)", g_app.peers[g_app.selected_peer].name);
-            else show_toast("Ping to %s: FAILED / TIMEOUT", g_app.peers[g_app.selected_peer].name);
-        }
+        g_app.peer_detail_selected_btn = 0;
+        do_peer_ping();
     } else if (ev->ch == 't' || ev->ch == 'T') {
-        if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
-            char cmd[256];
-            snprintf(cmd, sizeof(cmd), "tailscale ping -c 1 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
-            show_toast("Testing Tailscale wireguard latency to %s...", g_app.peers[g_app.selected_peer].name);
-            int res = system(cmd);
-            if (res == 0) show_toast("Tailscale Ping to %s: Connected!", g_app.peers[g_app.selected_peer].name);
-            else show_toast("Tailscale Ping to %s: Unreachable", g_app.peers[g_app.selected_peer].name);
+        g_app.peer_detail_selected_btn = 1;
+        do_peer_ts_ping();
+    } else if (ev->key == TB_KEY_ARROW_RIGHT || ev->key == TB_KEY_TAB) {
+        g_app.peer_detail_selected_btn = (g_app.peer_detail_selected_btn + 1) % 3;
+    } else if (ev->key == TB_KEY_ARROW_LEFT) {
+        g_app.peer_detail_selected_btn = (g_app.peer_detail_selected_btn + 2) % 3;
+    } else if (ev->key == TB_KEY_ENTER || ev->ch == ' ') {
+        if (g_app.peer_detail_selected_btn == 0) {
+            do_peer_ping();
+        } else if (g_app.peer_detail_selected_btn == 1) {
+            do_peer_ts_ping();
+        } else if (g_app.peer_detail_selected_btn == 2) {
+            g_app.mode = VIEW_DASHBOARD;
+        }
+    }
+}
+
+static void handle_peer_detail_mouse(struct tb_event *ev) {
+    if (ev->key == TB_KEY_MOUSE_LEFT) {
+        int width = tb_width();
+        int height = tb_height();
+        int box_w = (width >= 86) ? 80 : (width - 4);
+        if (box_w < 60) box_w = 60;
+        int box_h = 13;
+        int start_x = (width - box_w) / 2;
+        int start_y = (height - box_h) / 2;
+
+        if (ev->y == start_y + 11) {
+            if (ev->x >= start_x + 3 && ev->x < start_x + 11) {
+                g_app.peer_detail_selected_btn = 0;
+                do_peer_ping();
+            } else if (ev->x >= start_x + 13 && ev->x < start_x + 32) {
+                g_app.peer_detail_selected_btn = 1;
+                do_peer_ts_ping();
+            } else if (ev->x >= start_x + 34 && ev->x < start_x + 43) {
+                g_app.peer_detail_selected_btn = 2;
+                g_app.mode = VIEW_DASHBOARD;
+            }
+        } else if (ev->x < start_x || ev->x >= start_x + box_w || ev->y < start_y || ev->y >= start_y + box_h) {
+            g_app.mode = VIEW_DASHBOARD;
         }
     }
 }
@@ -598,6 +649,7 @@ void handle_event(struct tb_event *ev) {
             case VIEW_DASHBOARD: handle_dashboard_mouse(ev); break;
             case VIEW_CONFIG: handle_config_mouse(ev); break;
             case VIEW_LOGS: handle_logs_mouse(ev); break;
+            case VIEW_PEER_DETAIL: handle_peer_detail_mouse(ev); break;
             case VIEW_CONFIRM: handle_confirm_mouse(ev); break;
             case VIEW_INPUT: handle_input_mouse(ev); break;
             default: break;
@@ -614,7 +666,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.2.0\n");
+            printf("ZeroScale v0.2.1\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -i, --install      Install Entware Tailscale and ZeroScale services\n");

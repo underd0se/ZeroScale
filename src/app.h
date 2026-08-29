@@ -123,6 +123,9 @@ typedef struct {
     int input_cursor;
     int input_selected_btn;
 
+    // Peer Detail Modal
+    int peer_detail_selected_btn;
+
     int running;
 } AppState;
 
