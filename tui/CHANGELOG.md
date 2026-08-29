@@ -41,6 +41,9 @@ ZeroScale C-TUI `v0.1.0` is the first native C99 implementation of the ZeroScale
   * Keyboard navigation (`g`/`G`, `PgUp`/`PgDn`, `↑`/`↓`) and live refresh (`r`).
 * **Centered Multi-Stage ASCII Splash:**
   * Dynamically calculates terminal geometry and centers the iconic ZeroScale banner on startup and exit.
+* **Universal Auto-Detecting Installer (`install.sh`):**
+  * Automatically detects router CPU architecture (`ARMv7` vs `ARM64`) and pulls the corresponding release binary.
+  * Seamlessly detects and migrates legacy Tailmon configurations (`tailmon.cfg` ➔ `zeroscale.cfg`), cleans legacy post-mount hooks, and sets up `/opt/bin/tailmon` backward-compatibility symlinks.
 * **Asuswrt-Merlin Static Musl Binaries:**
   * `armv7-linux-musl` (140 KB) for 32-bit ARM Asus routers (RT-AX86U, RT-AC86U, RT-AC68U).
   * `arm64-linux-musl` (152 KB) for 64-bit ARM Asus routers (RT-AX88U Pro, GT-AXE16000, GT6).

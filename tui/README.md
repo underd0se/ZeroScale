@@ -69,20 +69,27 @@ ZeroScale C-TUI binaries are compiled statically using `musl-libc`, guaranteeing
 
 ---
 
-## 🛠️ Quick Installation on Asuswrt-Merlin
+## 🛠️ Universal Installation on Asuswrt-Merlin
+
+Run the following one-line installer on your router over SSH. It **automatically detects your router's architecture** (ARMv7 vs ARM64) and **migrates any existing Tailmon settings**:
 
 ```sh
-# For 32-bit ARMv7 routers (RT-AX86U, RT-AC86U, etc.):
+curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/c-tui/install.sh | sh
+```
+
+> [!TIP]
+> **Existing Tailmon Users:** The installer automatically detects `/jffs/addons/tailmon.d/tailmon.cfg`, migrates your routing/exit-node settings to `zeroscale.cfg`, cleans up old boot hooks, and creates a `/opt/bin/tailmon` compatibility alias.
+
+### Manual Download (Alternative)
+
+```sh
+# For 32-bit ARMv7 routers (RT-AX86U, RT-AC86U, RT-AC68U):
 curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/c-tui/tui/bin/release/zeroscale-tui-v0.1.0-armv7-linux-musl \
-  -o /jffs/scripts/zeroscale-tui
+  -o /jffs/scripts/zeroscale-tui && chmod 755 /jffs/scripts/zeroscale-tui && ln -sf /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui
 
-# For 64-bit ARM64 routers (RT-AX88U Pro, GT-AXE16000, etc.):
+# For 64-bit ARM64 routers (RT-AX88U Pro, GT-AXE16000, GT6):
 # curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/c-tui/tui/bin/release/zeroscale-tui-v0.1.0-arm64-linux-musl \
-#   -o /jffs/scripts/zeroscale-tui
-
-# Make executable and symlink to PATH
-chmod 755 /jffs/scripts/zeroscale-tui
-ln -sf /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui
+#   -o /jffs/scripts/zeroscale-tui && chmod 755 /jffs/scripts/zeroscale-tui && ln -sf /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui
 
 # Launch ZeroScale C-TUI
 zeroscale-tui
