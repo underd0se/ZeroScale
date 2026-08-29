@@ -8,7 +8,7 @@ set -e
 
 export PATH="/opt/bin:/opt/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PATH:-}"
 
-REPO_RAW_URL="https://raw.githubusercontent.com/underd0se/ZeroScale/c-tui"
+REPO_RAW_URL="https://raw.githubusercontent.com/underd0se/ZeroScale/main"
 VERSION="v0.1.0"
 INSTALL_DIR="/jffs/scripts"
 TARGET_BIN="${INSTALL_DIR}/zeroscale-tui"
@@ -107,7 +107,7 @@ fi
 # -------------------------------------------------------------------------------------------------------------------------
 # Step 4: Download Binary Release
 
-DOWNLOAD_URL="${REPO_RAW_URL}/tui/bin/release/${RELEASE_FILE}"
+DOWNLOAD_URL="${REPO_RAW_URL}/bin/release/${RELEASE_FILE}"
 TMP_BIN="/tmp/zeroscale-tui.tmp"
 
 printf "%b[*] Downloading ZeroScale C-TUI (%s)...%b\n" "${C_CYAN}" "${RELEASE_FILE}" "${C_RESET}"

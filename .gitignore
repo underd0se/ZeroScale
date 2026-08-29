@@ -3,9 +3,9 @@ ARCHITECTURE.md
 reboot_monitor.sh
 parse_log.py
 
-# C-TUI Build Artifacts
-tui/bin/*
-!tui/bin/release/
-!tui/bin/release/**
-tui/src/*.o
+# Build Artifacts
+bin/*
+!bin/release/
+!bin/release/**
+src/*.o
 *.o

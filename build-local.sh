@@ -7,22 +7,22 @@ ROUTER_HOST="${ROUTER_HOST:-}"
 ROUTER_PORT="${ROUTER_PORT:-22}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_rsa}"
 
-mkdir -p tui/bin
+mkdir -p bin
 
 echo "=== Cross-Compiling ZeroScale C-TUI on macOS for [${TARGET_ARCH}] ==="
 
 if [ "${TARGET_ARCH}" = "armv7" ]; then
-    zig cc -target arm-linux-musleabihf -O2 -s -std=c99 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Itui/include \
-        tui/src/main.c tui/src/config.c tui/src/ui.c -o tui/bin/zeroscale-tui-armv7
-    OUTPUT_BIN="tui/bin/zeroscale-tui-armv7"
+    zig cc -target arm-linux-musleabihf -O2 -s -std=c99 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Iinclude \
+        src/main.c src/config.c src/ui.c -o bin/zeroscale-tui-armv7
+    OUTPUT_BIN="bin/zeroscale-tui-armv7"
 elif [ "${TARGET_ARCH}" = "arm64" ] || [ "${TARGET_ARCH}" = "aarch64" ]; then
-    zig cc -target aarch64-linux-musl -O2 -s -std=c99 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Itui/include \
-        tui/src/main.c tui/src/config.c tui/src/ui.c -o tui/bin/zeroscale-tui-arm64
-    OUTPUT_BIN="tui/bin/zeroscale-tui-arm64"
+    zig cc -target aarch64-linux-musl -O2 -s -std=c99 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Iinclude \
+        src/main.c src/config.c src/ui.c -o bin/zeroscale-tui-arm64
+    OUTPUT_BIN="bin/zeroscale-tui-arm64"
 elif [ "${TARGET_ARCH}" = "mac" ] || [ "${TARGET_ARCH}" = "native" ]; then
-    clang -O2 -std=c99 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Itui/include \
-        tui/src/main.c tui/src/config.c tui/src/ui.c -o tui/bin/zeroscale-tui-mac
-    OUTPUT_BIN="tui/bin/zeroscale-tui-mac"
+    clang -O2 -std=c99 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Iinclude \
+        src/main.c src/config.c src/ui.c -o bin/zeroscale-tui-mac
+    OUTPUT_BIN="bin/zeroscale-tui-mac"
     echo "Native Mac build complete: ${OUTPUT_BIN}"
     exit 0
 else
