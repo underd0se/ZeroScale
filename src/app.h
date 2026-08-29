@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 #include <unistd.h>
 #include <signal.h>
@@ -28,6 +29,12 @@ typedef enum {
     VIEW_INPUT,
     VIEW_CONFIRM
 } ViewMode;
+
+typedef enum {
+    FOCUS_NONE,
+    FOCUS_HEADER_MENU,
+    FOCUS_PEERS
+} DashboardFocus;
 
 typedef enum {
     INPUT_ROUTES,
@@ -74,7 +81,13 @@ typedef struct {
 
 typedef struct {
     ViewMode mode;
+    ViewMode prev_mode;
     AppConfig config;
+
+    // Focus & Navigation
+    DashboardFocus dash_focus;
+    int header_selected_idx;
+    int config_selected_idx;
 
     // Peers Table
     PeerInfo peers[MAX_PEERS];
@@ -98,7 +111,9 @@ typedef struct {
 
     // Modals
     char confirm_prompt[128];
-    char confirm_cmd[256];
+    char confirm_action_label[32];
+    char confirm_cmd[512];
+    int confirm_selected_btn;
 
     // Generic Input Dialog
     InputTarget input_target;
@@ -106,6 +121,7 @@ typedef struct {
     char input_prompt[128];
     char input_buf[128];
     int input_cursor;
+    int input_selected_btn;
 
     int running;
 } AppState;
@@ -121,7 +137,7 @@ void refresh_tailscale_status(void);
 void load_logs(void);
 void show_toast(const char *fmt, ...);
 void show_splash(const char *status_msg, int duration_ms, uint32_t color);
-void request_confirm(const char *prompt, const char *cmd);
+void request_confirm(const char *prompt, const char *action_label, const char *cmd);
 void request_input(InputTarget target, const char *title, const char *prompt, const char *initial);
 
 void execute_action(const char *action, const char *cmd);

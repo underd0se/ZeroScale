@@ -40,9 +40,12 @@ void app_cleanup(void) {
     tb_shutdown();
 }
 
-void request_confirm(const char *prompt, const char *cmd) {
+void request_confirm(const char *prompt, const char *action_label, const char *cmd) {
     snprintf(g_app.confirm_prompt, sizeof(g_app.confirm_prompt), "%s", prompt);
+    snprintf(g_app.confirm_action_label, sizeof(g_app.confirm_action_label), "%s", action_label);
     snprintf(g_app.confirm_cmd, sizeof(g_app.confirm_cmd), "%s", cmd);
+    g_app.confirm_selected_btn = 0;
+    g_app.prev_mode = g_app.mode;
     g_app.mode = VIEW_CONFIRM;
 }
 
@@ -50,8 +53,10 @@ void request_input(InputTarget target, const char *title, const char *prompt, co
     g_app.input_target = target;
     snprintf(g_app.input_title, sizeof(g_app.input_title), "%s", title);
     snprintf(g_app.input_prompt, sizeof(g_app.input_prompt), "%s", prompt);
-    snprintf(g_app.input_buf, sizeof(g_app.input_buf), "%s", initial);
+    snprintf(g_app.input_buf, sizeof(g_app.input_buf), "%s", initial ? initial : "");
     g_app.input_cursor = (int)strlen(g_app.input_buf);
+    g_app.input_selected_btn = 0;
+    g_app.prev_mode = g_app.mode;
     g_app.mode = VIEW_INPUT;
 }
 
@@ -64,16 +69,11 @@ void execute_action(const char *action, const char *cmd) {
 }
 
 void install_zeroscale(void) {
-    tb_shutdown();
-    printf("\n=== Running Entware Tailscale Installer ===\n\n");
-    system("opkg update && opkg install tailscale && /opt/etc/init.d/S06tailscaled start");
-    printf("\nPress Enter to return to ZeroScale TUI...");
-    getchar();
-    tb_init();
-    tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
-    show_splash("INSTALLATION COMPLETE", 600, TB_GREEN | TB_BOLD);
-    load_config();
-    refresh_tailscale_status();
+    printf("\n=== Installing / Reinstalling Entware Tailscale ===\n\n");
+    system("/opt/etc/init.d/S06tailscaled stop 2>/dev/null || true");
+    system("opkg update && opkg install --force-reinstall tailscale");
+    system("/opt/etc/init.d/S06tailscaled start");
+    printf("\n[+] Entware Tailscale Installation Complete.\n\n");
 }
 
 void uninstall_zeroscale(void) {
@@ -90,64 +90,145 @@ void uninstall_zeroscale(void) {
 // -------------------------------------------------------------------------------------------------------------------------
 // View: Dashboard Handlers
 
+static void trigger_header_action(int idx) {
+    g_app.dash_focus = FOCUS_HEADER_MENU;
+    g_app.header_selected_idx = idx;
+    switch (idx) {
+        case 0: // Up
+            execute_action("Connecting Tailscale (tailscale up)...", "tailscale up");
+            break;
+        case 1: // Down
+            request_confirm("Disconnect from Tailnet?", "Disconnect", "tailscale down");
+            break;
+        case 2: // Restart
+            request_confirm("Restart Tailscale Daemon?", "Restart", "/opt/etc/init.d/S06tailscaled restart");
+            break;
+        case 3: // Start
+            execute_action("Starting Tailscale Daemon...", "/opt/etc/init.d/S06tailscaled start");
+            break;
+        case 4: // Stop
+            request_confirm("Stop Tailscale Daemon?", "Stop", "/opt/etc/init.d/S06tailscaled stop");
+            break;
+        case 5: // Logs
+            load_logs();
+            g_app.mode = VIEW_LOGS;
+            break;
+        case 6: // Configuration
+            g_app.mode = VIEW_CONFIG;
+            break;
+        case 7: // Quit
+            g_app.running = 0;
+            break;
+        default: break;
+    }
+}
+
 static void handle_dashboard_key(struct tb_event *ev) {
     if (ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q') {
         g_app.running = 0;
     } else if (ev->ch == 'u' || ev->ch == 'U') {
-        execute_action("Connecting Tailscale (tailscale up)...", "tailscale up");
+        trigger_header_action(0);
     } else if (ev->ch == 'd' || ev->ch == 'D') {
-        request_confirm("Disconnect Tailscale (tailscale down)?", "tailscale down");
+        trigger_header_action(1);
     } else if (ev->ch == 'r' || ev->ch == 'R') {
-        request_confirm("Restart Tailscale Daemon?", "/opt/etc/init.d/S06tailscaled restart");
+        trigger_header_action(2);
     } else if (ev->ch == 's' || ev->ch == 'S') {
-        execute_action("Starting Tailscale Daemon...", "/opt/etc/init.d/S06tailscaled start");
+        trigger_header_action(3);
     } else if (ev->ch == 't' || ev->ch == 'T') {
-        request_confirm("Stop Tailscale Daemon?", "/opt/etc/init.d/S06tailscaled stop");
+        trigger_header_action(4);
     } else if (ev->ch == 'l' || ev->ch == 'L') {
-        load_logs();
-        g_app.mode = VIEW_LOGS;
+        trigger_header_action(5);
     } else if (ev->ch == 'c' || ev->ch == 'C') {
-        g_app.mode = VIEW_CONFIG;
-    } else if (ev->key == TB_KEY_ENTER) {
-        if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
-            g_app.mode = VIEW_PEER_DETAIL;
+        trigger_header_action(6);
+    } else if (ev->key == TB_KEY_ARROW_RIGHT) {
+        if (g_app.dash_focus == FOCUS_NONE) {
+            g_app.dash_focus = FOCUS_HEADER_MENU;
+            g_app.header_selected_idx = 0;
+        } else if (g_app.dash_focus == FOCUS_HEADER_MENU) {
+            if (g_app.header_selected_idx < 7) g_app.header_selected_idx++;
+        }
+    } else if (ev->key == TB_KEY_ARROW_LEFT) {
+        if (g_app.dash_focus == FOCUS_HEADER_MENU) {
+            if (g_app.header_selected_idx > 0) g_app.header_selected_idx--;
+        }
+    } else if (ev->key == TB_KEY_ARROW_DOWN) {
+        if (g_app.dash_focus == FOCUS_NONE) {
+            g_app.dash_focus = FOCUS_HEADER_MENU;
+            g_app.header_selected_idx = 0;
+        } else if (g_app.dash_focus == FOCUS_HEADER_MENU) {
+            g_app.dash_focus = FOCUS_PEERS;
+            if (g_app.selected_peer < 0) g_app.selected_peer = 0;
+        } else if (g_app.dash_focus == FOCUS_PEERS) {
+            if (g_app.selected_peer < g_app.peer_count - 1) g_app.selected_peer++;
+            int max_rows = tb_height() - 13;
+            if (max_rows < 1) max_rows = 1;
+            if (g_app.selected_peer >= g_app.peer_scroll + max_rows) g_app.peer_scroll++;
         }
     } else if (ev->key == TB_KEY_ARROW_UP) {
-        if (g_app.selected_peer > 0) g_app.selected_peer--;
-        else if (g_app.selected_peer == -1 && g_app.peer_count > 0) g_app.selected_peer = 0;
-        if (g_app.selected_peer < g_app.peer_scroll) g_app.peer_scroll = g_app.selected_peer;
-    } else if (ev->key == TB_KEY_ARROW_DOWN) {
-        if (g_app.selected_peer < g_app.peer_count - 1) g_app.selected_peer++;
-        int max_rows = tb_height() - 13;
-        if (g_app.selected_peer >= g_app.peer_scroll + max_rows) g_app.peer_scroll++;
+        if (g_app.dash_focus == FOCUS_NONE) {
+            g_app.dash_focus = FOCUS_HEADER_MENU;
+            g_app.header_selected_idx = 0;
+        } else if (g_app.dash_focus == FOCUS_PEERS) {
+            if (g_app.selected_peer > 0) {
+                g_app.selected_peer--;
+                if (g_app.selected_peer < g_app.peer_scroll) g_app.peer_scroll = g_app.selected_peer;
+            } else {
+                g_app.dash_focus = FOCUS_HEADER_MENU;
+            }
+        }
+    } else if (ev->key == TB_KEY_ENTER) {
+        if (g_app.dash_focus == FOCUS_HEADER_MENU) {
+            trigger_header_action(g_app.header_selected_idx);
+        } else if (g_app.dash_focus == FOCUS_PEERS || g_app.selected_peer >= 0) {
+            if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+                g_app.mode = VIEW_PEER_DETAIL;
+            }
+        }
     }
 }
 
 static void handle_dashboard_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
+        int width = tb_width();
+        int is_wide = (width >= 96);
         // Row 5 Action Bar Click
         if (ev->y == 5) {
-            if (ev->x >= 2 && ev->x <= 6) {
-                execute_action("Connecting Tailscale (tailscale up)...", "tailscale up");
-            } else if (ev->x >= 7 && ev->x <= 13) {
-                request_confirm("Disconnect Tailscale (tailscale down)?", "tailscale down");
-            } else if (ev->x >= 17 && ev->x <= 25) {
-                request_confirm("Restart Tailscale Daemon?", "/opt/etc/init.d/S06tailscaled restart");
-            } else if (ev->x >= 27 && ev->x <= 33) {
-                execute_action("Starting Tailscale Daemon...", "/opt/etc/init.d/S06tailscaled start");
-            } else if (ev->x >= 35 && ev->x <= 41) {
-                request_confirm("Stop Tailscale Daemon?", "/opt/etc/init.d/S06tailscaled stop");
-            } else if (ev->x >= 46 && ev->x <= 52) {
-                load_logs();
-                g_app.mode = VIEW_LOGS;
-            } else if (ev->x >= 56 && ev->x <= 72) {
-                g_app.mode = VIEW_CONFIG;
-            } else if (ev->x >= 76 && ev->x <= 84) {
-                g_app.running = 0;
+            int x0 = 1;
+            int b0 = x0 + 9;
+            int b1 = b0 + 5;
+            int div1 = b1 + 7;
+            int ts_lbl = div1 + 2 + (is_wide ? 11 : 4);
+            int b2 = ts_lbl;
+            int b3 = b2 + 10;
+            int b4 = b3 + 8;
+            int div2 = b4 + 7;
+            int b5 = div2 + 2;
+            int div3 = b5 + 7;
+            int b6 = div3 + 2;
+            int div4 = b6 + (is_wide ? 16 : 9);
+            int b7 = div4 + 2;
+
+            if (ev->x >= b0 && ev->x < b0 + 4) {
+                trigger_header_action(0);
+            } else if (ev->x >= b1 && ev->x < b1 + 6) {
+                trigger_header_action(1);
+            } else if (ev->x >= b2 && ev->x < b2 + 9) {
+                trigger_header_action(2);
+            } else if (ev->x >= b3 && ev->x < b3 + 7) {
+                trigger_header_action(3);
+            } else if (ev->x >= b4 && ev->x < b4 + 6) {
+                trigger_header_action(4);
+            } else if (ev->x >= b5 && ev->x < b5 + 6) {
+                trigger_header_action(5);
+            } else if (ev->x >= b6 && ev->x < b6 + (is_wide ? 15 : 8)) {
+                trigger_header_action(6);
+            } else if (ev->x >= b7 && ev->x < b7 + 6) {
+                trigger_header_action(7);
             }
         } else if (ev->y >= 10 && ev->y < 10 + g_app.peer_count) {
             int clicked_idx = (ev->y - 10) + g_app.peer_scroll;
             if (clicked_idx < g_app.peer_count) {
+                g_app.dash_focus = FOCUS_PEERS;
                 if (g_app.selected_peer == clicked_idx) {
                     g_app.mode = VIEW_PEER_DETAIL;
                 } else {
@@ -167,81 +248,107 @@ static void handle_dashboard_mouse(struct tb_event *ev) {
 // -------------------------------------------------------------------------------------------------------------------------
 // View: Unified Config Menu Handlers
 
+static void trigger_config_action(int idx) {
+    g_app.config_selected_idx = idx;
+    switch (idx) {
+        case 0: toggle_keepalive(); break;
+        case 1: toggle_persistentsettings(); break;
+        case 2: toggle_autostart(); break;
+        case 3: cycle_opmode(); break;
+        case 4: toggle_exitnode(); break;
+        case 5: toggle_advroutes(); break;
+        case 6: request_input(INPUT_ROUTES, "Subnet Routes CIDR", "Enter subnet CIDR to advertise", g_app.config.routes); break;
+        case 7: cycle_timerloop(); break;
+        case 8: {
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%d", g_app.config.logsize);
+            request_input(INPUT_LOGSIZE, "Event Log Retention", "Enter max log rows (100-9999, 0=Disable)", buf);
+            break;
+        }
+        case 9: cycle_amtm_email(); break;
+        case 10: cycle_schedule(); break;
+        case 11:
+            request_confirm("Update Tailscale binary to latest version?",
+                            "Update",
+                            "/opt/bin/opkg update && /opt/bin/opkg upgrade tailscale || tailscale update --yes; /opt/etc/init.d/S06tailscaled restart");
+            break;
+        case 12:
+            request_confirm("Reset daemon state and re-authenticate?",
+                            "Reset State",
+                            "/opt/etc/init.d/S06tailscaled stop; rm -f /opt/var/tailscaled.state; /opt/etc/init.d/S06tailscaled start");
+            break;
+        case 13:
+            request_confirm("Reinstall Entware Tailscale package?",
+                            "Reinstall",
+                            "/opt/etc/init.d/S06tailscaled stop 2>/dev/null; /opt/bin/opkg update; /opt/bin/opkg install --force-reinstall tailscale; /opt/etc/init.d/S06tailscaled start");
+            break;
+        case 14:
+            request_confirm("Completely uninstall ZeroScale from router?",
+                            "Uninstall",
+                            "killall -9 zeroscale-tui 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' -e '/tailmon/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui");
+            break;
+        default: break;
+    }
+}
+
 static void handle_config_key(struct tb_event *ev) {
     if (ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q') {
         g_app.mode = VIEW_DASHBOARD;
+    } else if (ev->key == TB_KEY_ARROW_DOWN) {
+        if (g_app.config_selected_idx < 14) g_app.config_selected_idx++;
+    } else if (ev->key == TB_KEY_ARROW_UP) {
+        if (g_app.config_selected_idx > 0) g_app.config_selected_idx--;
+    } else if (ev->key == TB_KEY_ENTER || ev->ch == ' ') {
+        trigger_config_action(g_app.config_selected_idx);
     } else if (ev->ch == '1') {
-        toggle_keepalive();
+        trigger_config_action(0);
     } else if (ev->ch == '2') {
-        toggle_persistentsettings();
+        trigger_config_action(1);
     } else if (ev->ch == '3') {
-        toggle_autostart();
+        trigger_config_action(2);
     } else if (ev->ch == '4') {
-        cycle_opmode();
+        trigger_config_action(3);
     } else if (ev->ch == '5') {
-        toggle_exitnode();
+        trigger_config_action(4);
     } else if (ev->ch == '6') {
-        toggle_advroutes();
+        trigger_config_action(5);
     } else if (ev->ch == '7') {
-        request_input(INPUT_ROUTES, "Subnet Routes CIDR", "Enter subnet CIDR to advertise", g_app.config.routes);
+        trigger_config_action(6);
     } else if (ev->ch == '8') {
-        cycle_timerloop();
+        trigger_config_action(7);
     } else if (ev->ch == '9') {
-        char buf[16];
-        snprintf(buf, sizeof(buf), "%d", g_app.config.logsize);
-        request_input(INPUT_LOGSIZE, "Event Log Retention", "Enter max log rows (100-9999, 0=Disable)", buf);
+        trigger_config_action(8);
     } else if (ev->ch == '0' || ev->ch == 'a' || ev->ch == 'A') {
-        cycle_amtm_email();
+        trigger_config_action(9);
     } else if (ev->ch == 's' || ev->ch == 'S') {
-        cycle_schedule();
+        trigger_config_action(10);
     } else if (ev->ch == 'u' || ev->ch == 'U') {
-        tb_shutdown();
-        system("sh /jffs/scripts/zeroscale.sh -update");
-        tb_init();
-        tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
-        refresh_tailscale_status();
+        trigger_config_action(11);
     } else if (ev->ch == 'x' || ev->ch == 'X') {
-        request_confirm("Reset Tailscale Daemon State?", "/opt/etc/init.d/S06tailscaled stop; rm -f /opt/var/tailscaled.state; /opt/etc/init.d/S06tailscaled start");
+        trigger_config_action(12);
     } else if (ev->ch == 'i' || ev->ch == 'I') {
-        install_zeroscale();
+        trigger_config_action(13);
     }
 }
 
 static void handle_config_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
         switch (ev->y) {
-            case 5: toggle_keepalive(); break;
-            case 6: toggle_persistentsettings(); break;
-            case 7: toggle_autostart(); break;
-            case 10: cycle_opmode(); break;
-            case 11: toggle_exitnode(); break;
-            case 12: toggle_advroutes(); break;
-            case 13: request_input(INPUT_ROUTES, "Subnet Routes CIDR", "Enter subnet CIDR to advertise", g_app.config.routes); break;
-            case 16: cycle_timerloop(); break;
-            case 17: {
-                char buf[16];
-                snprintf(buf, sizeof(buf), "%d", g_app.config.logsize);
-                request_input(INPUT_LOGSIZE, "Event Log Retention", "Enter max log rows (100-9999, 0=Disable)", buf);
-                break;
-            }
-            case 20: cycle_amtm_email(); break;
-            case 21: cycle_schedule(); break;
-            case 24:
-                tb_shutdown();
-                system("sh /jffs/scripts/zeroscale.sh -update");
-                tb_init();
-                tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
-                refresh_tailscale_status();
-                break;
-            case 25:
-                request_confirm("Reset Tailscale Daemon State?", "/opt/etc/init.d/S06tailscaled stop; rm -f /opt/var/tailscaled.state; /opt/etc/init.d/S06tailscaled start");
-                break;
-            case 26:
-                install_zeroscale();
-                break;
-            case 27:
-                request_confirm("Uninstall ZeroScale completely?", "killall -9 zeroscale-tui 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' -e '/tailmon/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui");
-                break;
+            case 5: trigger_config_action(0); break;
+            case 6: trigger_config_action(1); break;
+            case 7: trigger_config_action(2); break;
+            case 10: trigger_config_action(3); break;
+            case 11: trigger_config_action(4); break;
+            case 12: trigger_config_action(5); break;
+            case 13: trigger_config_action(6); break;
+            case 16: trigger_config_action(7); break;
+            case 17: trigger_config_action(8); break;
+            case 20: trigger_config_action(9); break;
+            case 21: trigger_config_action(10); break;
+            case 24: trigger_config_action(11); break;
+            case 25: trigger_config_action(12); break;
+            case 26: trigger_config_action(13); break;
+            case 27: trigger_config_action(14); break;
             default: break;
         }
     }
@@ -315,29 +422,91 @@ static void handle_logs_mouse(struct tb_event *ev) {
 // -------------------------------------------------------------------------------------------------------------------------
 // View: Input Modal Handlers
 
+static void save_input_action(void) {
+    if (g_app.input_target == INPUT_ROUTES) {
+        snprintf(g_app.config.routes, sizeof(g_app.config.routes), "%s", g_app.input_buf);
+        save_config();
+        show_toast("Subnet Routes updated to: %s", g_app.config.routes);
+    } else if (g_app.input_target == INPUT_LOGSIZE) {
+        int size = atoi(g_app.input_buf);
+        g_app.config.logsize = size;
+        save_config();
+        show_toast("Log Retention updated to: %d rows", g_app.config.logsize);
+    }
+    g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
+}
+
+static void cancel_input_action(void) {
+    show_toast("Edit cancelled.");
+    g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
+}
+
 static void handle_input_key(struct tb_event *ev) {
     if (ev->key == TB_KEY_ESC) {
-        g_app.mode = VIEW_CONFIG;
-    } else if (ev->key == TB_KEY_ENTER) {
-        if (g_app.input_target == INPUT_ROUTES) {
-            snprintf(g_app.config.routes, sizeof(g_app.config.routes), "%s", g_app.input_buf);
-            save_config();
-            show_toast("Subnet Routes updated to: %s", g_app.config.routes);
-        } else if (g_app.input_target == INPUT_LOGSIZE) {
-            int size = atoi(g_app.input_buf);
-            g_app.config.logsize = size;
-            save_config();
-            show_toast("Log Retention updated to: %d rows", g_app.config.logsize);
+        cancel_input_action();
+        return;
+    }
+
+    if (g_app.input_selected_btn == 0) {
+        // Focus is on text input box
+        if (ev->key == TB_KEY_ENTER) {
+            save_input_action();
+        } else if (ev->key == TB_KEY_TAB || ev->key == TB_KEY_ARROW_DOWN) {
+            g_app.input_selected_btn = 1; // Move to Save button
+        } else if (ev->key == TB_KEY_BACKSPACE || ev->key == TB_KEY_BACKSPACE2) {
+            if (g_app.input_cursor > 0) {
+                g_app.input_buf[--g_app.input_cursor] = '\0';
+            }
+        } else if (ev->ch >= 32 && ev->ch <= 126) {
+            if (g_app.input_cursor < (int)sizeof(g_app.input_buf) - 2) {
+                g_app.input_buf[g_app.input_cursor++] = (char)ev->ch;
+                g_app.input_buf[g_app.input_cursor] = '\0';
+            }
         }
-        g_app.mode = VIEW_CONFIG;
-    } else if (ev->key == TB_KEY_BACKSPACE || ev->key == TB_KEY_BACKSPACE2) {
-        if (g_app.input_cursor > 0) {
-            g_app.input_buf[--g_app.input_cursor] = '\0';
+    } else if (g_app.input_selected_btn == 1) {
+        // Focus is on Save button
+        if (ev->key == TB_KEY_ENTER || ev->ch == ' ' || ev->ch == 's' || ev->ch == 'S' || ev->ch == 'y' || ev->ch == 'Y') {
+            save_input_action();
+        } else if (ev->key == TB_KEY_ARROW_RIGHT || ev->key == TB_KEY_TAB) {
+            g_app.input_selected_btn = 2; // Move to Cancel button
+        } else if (ev->key == TB_KEY_ARROW_UP || ev->key == TB_KEY_ARROW_LEFT) {
+            g_app.input_selected_btn = 0; // Return to text field
+        } else if (ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q') {
+            cancel_input_action();
         }
-    } else if (ev->ch >= 32 && ev->ch <= 126) {
-        if (g_app.input_cursor < (int)sizeof(g_app.input_buf) - 2) {
-            g_app.input_buf[g_app.input_cursor++] = (char)ev->ch;
-            g_app.input_buf[g_app.input_cursor] = '\0';
+    } else if (g_app.input_selected_btn == 2) {
+        // Focus is on Cancel button
+        if (ev->key == TB_KEY_ENTER || ev->ch == ' ' || ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q') {
+            cancel_input_action();
+        } else if (ev->key == TB_KEY_ARROW_LEFT) {
+            g_app.input_selected_btn = 1; // Move to Save button
+        } else if (ev->key == TB_KEY_ARROW_UP) {
+            g_app.input_selected_btn = 0; // Return to text field
+        } else if (ev->key == TB_KEY_TAB || ev->key == TB_KEY_ARROW_RIGHT) {
+            g_app.input_selected_btn = 0; // Wrap back to text field
+        }
+    }
+}
+
+static void handle_input_mouse(struct tb_event *ev) {
+    if (ev->key == TB_KEY_MOUSE_LEFT) {
+        int width = tb_width();
+        int height = tb_height();
+        int box_w = (width >= 74) ? 68 : (width - 4);
+        int box_h = 8;
+        int start_x = (width - box_w) / 2;
+        int start_y = (height - box_h) / 2;
+
+        if (ev->y == start_y + 4) {
+            g_app.input_selected_btn = 0; // Click text field
+        } else if (ev->y == start_y + 6) {
+            if (ev->x >= start_x + 4 && ev->x < start_x + 12) {
+                g_app.input_selected_btn = 1;
+                save_input_action();
+            } else if (ev->x >= start_x + 14 && ev->x < start_x + 22) {
+                g_app.input_selected_btn = 2;
+                cancel_input_action();
+            }
         }
     }
 }
@@ -345,17 +514,61 @@ static void handle_input_key(struct tb_event *ev) {
 // -------------------------------------------------------------------------------------------------------------------------
 // View: Confirm Dialog Handlers
 
+static void execute_confirm_action(void) {
+    char buf[512];
+    snprintf(buf, sizeof(buf), "%s >/dev/null 2>&1 &", g_app.confirm_cmd);
+    system(buf);
+    show_toast("Action executed.");
+    g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
+    refresh_tailscale_status();
+}
+
+static void cancel_confirm_action(void) {
+    show_toast("Action cancelled.");
+    g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
+}
+
 static void handle_confirm_key(struct tb_event *ev) {
-    if (ev->ch == 'y' || ev->ch == 'Y') {
-        char buf[512];
-        snprintf(buf, sizeof(buf), "%s >/dev/null 2>&1 &", g_app.confirm_cmd);
-        system(buf);
-        show_toast("Action executed.");
-        g_app.mode = VIEW_DASHBOARD;
-        refresh_tailscale_status();
-    } else if (ev->ch == 'n' || ev->ch == 'N' || ev->key == TB_KEY_ESC) {
-        show_toast("Action cancelled.");
-        g_app.mode = VIEW_DASHBOARD;
+    char act_char = (strlen(g_app.confirm_action_label) > 0) ? (char)tolower((unsigned char)g_app.confirm_action_label[0]) : 'y';
+
+    if (ev->key == TB_KEY_ARROW_LEFT || ev->key == TB_KEY_ARROW_RIGHT || ev->key == TB_KEY_TAB) {
+        g_app.confirm_selected_btn = 1 - g_app.confirm_selected_btn;
+    } else if (ev->key == TB_KEY_ENTER || ev->ch == ' ') {
+        if (g_app.confirm_selected_btn == 0) {
+            execute_confirm_action();
+        } else {
+            cancel_confirm_action();
+        }
+    } else if (ev->ch == 'y' || ev->ch == 'Y' || ev->ch == act_char || ev->ch == (char)toupper((unsigned char)act_char)) {
+        execute_confirm_action();
+    } else if (ev->ch == 'n' || ev->ch == 'N' || ev->ch == 'c' || ev->ch == 'C' || ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q') {
+        cancel_confirm_action();
+    }
+}
+
+static void handle_confirm_mouse(struct tb_event *ev) {
+    if (ev->key == TB_KEY_MOUSE_LEFT) {
+        int width = tb_width();
+        int height = tb_height();
+        int box_w = (width >= 70) ? 66 : (width - 4);
+        int box_h = 8;
+        int start_x = (width - box_w) / 2;
+        int start_y = (height - box_h) / 2;
+
+        if (ev->y == start_y + 5) {
+            const char *action_lbl = (strlen(g_app.confirm_action_label) > 0) ? g_app.confirm_action_label : "Confirm";
+            int act_len = (int)strlen(action_lbl) + 2;
+            int btn0_x = start_x + 4;
+            int btn1_x = btn0_x + act_len + 3;
+
+            if (ev->x >= btn0_x && ev->x < btn0_x + act_len) {
+                g_app.confirm_selected_btn = 0;
+                execute_confirm_action();
+            } else if (ev->x >= btn1_x && ev->x < btn1_x + 8) {
+                g_app.confirm_selected_btn = 1;
+                cancel_confirm_action();
+            }
+        }
     }
 }
 
@@ -378,6 +591,8 @@ void handle_event(struct tb_event *ev) {
             case VIEW_DASHBOARD: handle_dashboard_mouse(ev); break;
             case VIEW_CONFIG: handle_config_mouse(ev); break;
             case VIEW_LOGS: handle_logs_mouse(ev); break;
+            case VIEW_CONFIRM: handle_confirm_mouse(ev); break;
+            case VIEW_INPUT: handle_input_mouse(ev); break;
             default: break;
         }
     }
@@ -392,7 +607,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale C-TUI v0.1.0\n");
+            printf("ZeroScale C-TUI v0.2.0\n");
             printf("Usage: zeroscale-tui [options]\n\n");
             printf("Options:\n");
             printf("  -i, --install      Install Entware Tailscale and ZeroScale services\n");

@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-08-29
+
+### 🎨 Major UI Overhaul & Complete Keyboard Navigation
+
+ZeroScale C-TUI `v0.2.0` introduces complete full-keyboard navigation across all views, a major visual UI overhaul with streamlined button hierarchy, and resilient daemon installation/update workflows.
+
+#### 🌟 Added & Enhanced
+* **Streamlined UI & Dynamic Button Hierarchy:**
+  * Clean text buttons with zero background fill on unfocused state to eliminate visual clutter.
+  * Elevated, high-emphasis filled containers upon active keyboard or mouse focus (Bold Green for positive/nav actions, Bold Red for destructive/stop/quit actions, Bold White for secondary/dismiss actions).
+  * Applied consistently across Dashboard Header buttons, Confirmation Modals, Input Modals, and Peer Node Inspector.
+* **Full Keyboard Navigation Across All Views:**
+  * **Dashboard Action Bar:** Navigate with `←` / `→` arrows and execute with `Enter` / `Space`, with visual tracking indicator.
+  * **Configuration View:** Seamless `↑` / `↓` cursor navigation across all 14 configuration items with `Enter`/`Space` to toggle or edit.
+  * **Confirmation Dialogs:** Keyboard navigable with `←` / `→` / `Tab` and executable with `Enter`, with context-specific action labels (`Disconnect`, `Restart`, `Stop`, `Update`, `Reset State`, `Reinstall`, `Uninstall` vs `Cancel`).
+  * **Input Modals:** Interactive navigation between Text Field and Save/Cancel buttons via `Tab`, `↓`, `↑`, and `Enter`.
+* **Clean Configuration Menu & Preserved Backgrounds:**
+  * Removed verbose brackets and helper callout text for a sleek, minimal interface.
+  * Modal dialogs opened from the Configuration menu now preserve the Configuration view directly in the background.
+* **Service Safety & Daemon Fixes:**
+  * Added confirmation prompt to Tailscale Binary Update.
+  * Reinstalling Tailscale from Entware safely stops the running daemon first, avoiding opkg conflicts and terminal freezes.
+* **Muted Dialog Hint Typography:**
+  * Soft, muted gray formatting for navigation shortcut instructions.
+
+---
+
 ## [0.1.0] - 2026-08-29
 
 ### 🚀 Initial Public Release

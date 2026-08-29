@@ -64,8 +64,8 @@ ZeroScale C-TUI binaries are compiled statically using `musl-libc`, guaranteeing
 
 | Release Artifact | Target Architecture | Compatible Asus Router Models |
 |:---|:---|:---|
-| [`zeroscale-tui-v0.1.0-armv7-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.1.0-armv7-linux-musl) | `armv7l` (32-bit ARM Cortex-A7/A9/A15) | RT-AX86U, RT-AC86U, RT-AC68U, RT-AX58U, RT-AX56U |
-| [`zeroscale-tui-v0.1.0-arm64-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.1.0-arm64-linux-musl) | `aarch64` (64-bit ARM Cortex-A53/A72) | RT-AX88U Pro, GT-AXE16000, GT6, RT-BE96U, GT-BE98 |
+| [`zeroscale-tui-v0.2.0-armv7-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.2.0-armv7-linux-musl) | `armv7l` (32-bit ARM Cortex-A7/A9/A15) | RT-AX86U, RT-AC86U, RT-AC68U, RT-AX58U, RT-AX56U |
+| [`zeroscale-tui-v0.2.0-arm64-linux-musl`](https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.2.0-arm64-linux-musl) | `aarch64` (64-bit ARM Cortex-A53/A72) | RT-AX88U Pro, GT-AXE16000, GT6, RT-BE96U, GT-BE98 |
 
 ---
 
@@ -84,11 +84,11 @@ curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/install.sh
 
 ```sh
 # For 32-bit ARMv7 routers (RT-AX86U, RT-AC86U, RT-AC68U):
-curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.1.0-armv7-linux-musl \
+curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.2.0-armv7-linux-musl \
   -o /jffs/scripts/zeroscale-tui && chmod 755 /jffs/scripts/zeroscale-tui && ln -sf /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui
 
 # For 64-bit ARM64 routers (RT-AX88U Pro, GT-AXE16000, GT6):
-# curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.1.0-arm64-linux-musl \
+# curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/main/bin/release/zeroscale-tui-v0.2.0-arm64-linux-musl \
 #   -o /jffs/scripts/zeroscale-tui && chmod 755 /jffs/scripts/zeroscale-tui && ln -sf /jffs/scripts/zeroscale-tui /opt/bin/zeroscale-tui
 
 # Launch ZeroScale C-TUI
@@ -121,20 +121,22 @@ cd ZeroScale
 |:---|:---:|:---|
 | **Anywhere** | `Mouse Left-Click` | Activate buttons, select peers, toggle settings |
 | **Anywhere** | `Option (⌥) + Drag` | Native terminal text selection and copying (macOS) |
-| **Dashboard** | `↑` / `↓` / `Mouse Wheel` | Scroll through peer network table |
-| **Dashboard** | `Enter` / Double Click | Open Peer Inspector modal |
-| **Dashboard** | `u` / `d` | Tailscale `up` (connect) / `down` (disconnect) |
-| **Dashboard** | `r` / `s` / `t` | Tailscale daemon restart / start / stop |
-| **Dashboard** | `c` | Open Configuration & Service Menu |
-| **Dashboard** | `l` | Open Event Log Viewer |
-| **Dashboard** | `q` / `Esc` | Clean exit with shutdown splash |
-| **Peer Inspector** | `p` | ICMP Ping peer node |
-| **Peer Inspector** | `t` | WireGuard latency ping |
-| **Peer Inspector** | `c` / `Esc` | Close modal |
-| **Log Viewer** | `↑` / `↓` / `PgUp` / `PgDn` | Scroll logs |
-| **Log Viewer** | `g` / `G` | Jump to Top / Bottom of logs |
-| **Log Viewer** | `r` | Reload log file |
-| **Log Viewer** | `q` / `Esc` | Return to Live Monitor |
+| **Dashboard** | `↑` / `↓` | Navigate between Header Action Bar and Peer Node Table |
+| **Dashboard** | `←` / `→` | Cycle through Header Action Bar buttons when focused |
+| **Dashboard** | `Enter` | Trigger focused button or open Peer Inspector for selected node |
+| **Dashboard** | `u` / `d` | Quick direct shortcut for Tailscale `up` / `down` |
+| **Dashboard** | `r` / `s` / `t` | Quick direct shortcut for daemon restart / start / stop |
+| **Dashboard** | `c` / `l` / `q` | Open Configuration / Logs / Quit |
+| **Config Menu** | `↑` / `↓` | Navigate through all 14 configuration items |
+| **Config Menu** | `Enter` / `Space` | Toggle setting / Open Subnet CIDR editor / Open Log retention editor |
+| **Config Menu** | `Esc` / `q` | Return to Dashboard |
+| **Modals & Dialogs** | `←` / `→` / `Tab` | Switch between Action and Cancel buttons |
+| **Modals & Dialogs** | `Enter` / `Space` | Execute focused modal action |
+| **Modals & Dialogs** | `Esc` / `c` / `q` | Cancel modal and return cleanly |
+| **Input Modals** | `Tab` / `↓` / `↑` | Move focus between Text Input field and Save/Cancel buttons |
+| **Peer Inspector** | `p` / `t` / `c` | Live ICMP Ping / Tailscale WireGuard Ping / Close modal |
+| **Log Viewer** | `↑` / `↓` / `PgUp` / `PgDn` | Scroll log viewer |
+| **Log Viewer** | `g` / `G` / `r` | Jump to Top / Bottom / Refresh logs |
 
 ---
 
