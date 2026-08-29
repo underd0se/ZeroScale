@@ -475,118 +475,69 @@ while true; do
   if [ -f "/opt/bin/tailscale" ]; then
     tsinstalled=1
 
+    # Check daemon status
+    /opt/etc/init.d/S06tailscaled check >/dev/null 2>&1
+    tsservice=$?
+    if [ $tsservice -ne 0 ]; then
+      tsservicedisp="${CRed}Stopped${CClear}"
+    else
+      tsservicedisp="${CGreen}Started${CClear}"
+    fi
+
+    # Check connection status
+    tailscale status >/dev/null 2>&1
+    tsconn=$?
+    if [ $tsconn -ne 0 ]; then
+      tsconndisp="${CRed}Disconnected${CClear}"
+    else
+      tsconndisp="${CGreen}Connected${CClear}"
+    fi
+
     if [ "$keepalive" -eq 1 ]; then
-      keepalivedisp="Yes"
+      keepalivedisp="${CGreen}Active${CClear}"
     else
-      keepalivedisp="No"
+      keepalivedisp="${CDkGray}Off${CClear}   "
     fi
 
-    if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
-      amtmdisp="${CDkGray}Disabled        "
-    elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
-      amtmdisp="${CGreen}Success         "
-    elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
-      amtmdisp="${CGreen}Failure         "
-    elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
-      amtmdisp="${CGreen}Success, Failure"
+    if [ "$exitnode" -eq 1 ]; then
+      exitnodedisp="${CGreen}Yes${CClear}"
     else
-      amtmdisp="${CDkGray}Disabled        "
+      exitnodedisp="${CDkGray}No${CClear} "
     fi
 
-    rldisp=""
-    if [ "$amtmemailsuccess" = "1" ] || [ "$amtmemailfailure" = "1" ]
-      then
-        if [ "$ratelimit" = "0" ]; then
-          rldisp="| ${CRed}RL"
-        else
-          rldisp="| ${CClear}RL: ${CGreen}$ratelimit/h"
-        fi
+    if [ "$advroutes" -eq 1 ] && [ -n "$routes" ]; then
+      routesdisp="${CGreen}$routes${CClear}"
+    else
+      routesdisp="${CDkGray}No${CClear}"
     fi
-
-    if [ -z "$tzone" ]; then tzone=$(date +%Z); fi
-    tzonechars=${#tzone}
-
-    if [ "$tzonechars" = 1 ]; then tzspaces="        ";
-    elif [ "$tzonechars" = 2 ]; then tzspaces="       ";
-    elif [ "$tzonechars" = 3 ]; then tzspaces="      ";
-    elif [ "$tzonechars" = 4 ]; then tzspaces="     ";
-    elif [ "$tzonechars" = 5 ]; then tzspaces="    "; fi
 
     tsver=$(tailscale version | awk 'NR==1 {print $1}') >/dev/null 2>&1
     if [ -z "$tsver" ]; then tsver="0.00"; fi
 
-    #Display ZeroScale Update Notifications
+    # Display ZeroScale Update Notifications
     if [ "$track" = "0" ]; then
-      if [ "$UpdateNotify" != "0" ]
-        then
-          echo -e "$UpdateNotify"
+      if [ "$UpdateNotify" != "0" ]; then
+        echo -e "$UpdateNotify"
       fi
     fi
 
     if [ "$track" = "1" ]; then
-      if [ "$BUpdateNotify" != "0" ]
-        then
-          echo -e "$BUpdateNotify"
+      if [ "$BUpdateNotify" != "0" ]; then
+        echo -e "$BUpdateNotify"
       fi
     fi
 
-    #Display ZeroScale client header
-    echo -en "${InvGreen} ${InvDkGray} ZeroScale - v"
-    printf "%-8s" "$version"
-    echo -e "                     ${CWhite}Operations Menu ${InvDkGray}           $tzspaces$(date +"%a %b %d, %Y %H:%M:%S %Z %z") ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${CGreen}(R)${CClear}e-${CGreen}(S)${CClear}tart / S${CGreen}(T)${CClear}op Tailscale Service              ${InvGreen} ${CClear} ${CGreen}(C)${CClear}onfiguration Menu / Main Setup Menu $rldisp${CClear}"
-    echo -e "${InvGreen} ${CClear} Tailscale Connection ${CGreen}(U)${CClear}p / ${CGreen}(D)${CClear}own                   ${InvGreen} ${CClear} ${CGreen}(L)${CClear}og Viewer / Trim Log Size (rows): ${CGreen}$logsize${CClear}"
-
-    if [ "$tsoperatingmode" == "Custom" ]; then
-      echo -e "${InvGreen} ${CClear} Custom ${CGreen}(O)${CClear}peration Mode Settings                     ${InvGreen} ${CClear} ${CGreen}(K)${CClear}eep Tailscale Service Alive: ${CGreen}$keepalivedisp${CClear}"
-    else
-      echo -e "${InvGreen} ${CClear} ${CDkGray}Custom (O)peration Mode Settings${CClear}                     ${InvGreen} ${CClear} ${CGreen}(K)${CClear}eep Tailscale Service Alive: ${CGreen}$keepalivedisp${CClear}"
-    fi
-    echo -e "${InvGreen} ${CClear} ${CGreen}(A)${CClear}MTM Email Notifications: $amtmdisp         ${InvGreen} ${CClear} Ti${CGreen}(M)${CClear}er Check Loop Interval: ${CGreen}${timerloop}sec${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
+    # Display Modern Unified Header
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale v$version ── Live Monitor                          $(date +"%a %b %d, %Y %H:%M:%S") ${CClear}"
+    echo -e "${InvGreen} ${CClear} Service: [ $tsservicedisp ] (v$tsver)  ${CDkGray}│${CClear} Tailnet: [ $tsconndisp ] (${tsoperatingmode} Mode)"
+    echo -e "${InvGreen} ${CClear} Watchdog: [ $keepalivedisp ] (${timerloop}s loop)  ${CDkGray}│${CClear} Exit Node: [ $exitnodedisp ]  ${CDkGray}│${CClear} Routes: [ $routesdisp ]"
+    echo -e "${InvGreen} ${CClear}${CDkGray}───────────────────────────────────────────────────────────────────────────────────────${CClear}"
+    echo -e "${InvGreen} ${CClear} ${CGreen}(U)${CClear}p/${CGreen}(D)${CClear}own  ${CDkGray}│${CClear}  ${CGreen}(R)${CClear}estart/${CGreen}(S)${CClear}tart/S${CGreen}(t)${CClear}op  ${CDkGray}│${CClear}  ${CGreen}(L)${CClear}ogs  ${CDkGray}│${CClear}  ${CGreen}(C)${CClear}onfiguration  ${CDkGray}│${CClear}  ${CGreen}(E)${CClear}xit"
+    echo -e "${InvGreen} ${CClear}${CDkGray}───────────────────────────────────────────────────────────────────────────────────────${CClear}"
     echo ""
-    echo -en "${InvDkGray}${CWhite}Tailscale Service v"
-    printf "%-8s" "$tsver"
-    echo -e "                                                                                    ${CClear}"
-    /opt/etc/init.d/S06tailscaled check
-    tsservice=$?
-
-    echo ""
-    echo -e "${InvDkGray}${CWhite}Tailscale Connection Status:                                                                                   ${CClear}"
+    echo -e "${InvDkGray}${CWhite} Tailscale Peer & Network Status:                                                      ${CClear}"
     tailscale status
-    tsstatus=$?
     echo ""
-
-    if [ "$tsoperatingmode" == "Userspace" ]; then
-      echo -e "${InvDkGray}${CWhite}Tailscale Service Options (Userspace Mode)                                                                     ${CClear}"
-      echo -e "${CWhite}ARGS: ${CGreen}$args"
-      echo -e "${CWhite}PREARGS: ${CGreen}$preargs"
-    elif [ "$tsoperatingmode" == "Kernel" ]; then
-      echo -e "${InvDkGray}${CWhite}Tailscale Service Options (Kernel Mode)                                                                        ${CClear}"
-      echo -e "${CWhite}PRECMD: ${CGreen}$precmd"
-      echo -e "${CWhite}ARGS: ${CGreen}$args"
-      echo -e "${CWhite}PREARGS: ${CGreen}$preargs"
-    elif [ "$tsoperatingmode" == "Custom" ]; then
-      echo -e "${InvDkGray}${CWhite}Tailscale Service Options (Custom Mode)                                                                        ${CClear}"
-      echo -e "${CWhite}PRECMD: ${CGreen}$precmd"
-      echo -e "${CWhite}ARGS: ${CGreen}$args"
-      echo -e "${CWhite}PREARGS: ${CGreen}$preargs"
-    fi
-
-    echo ""
-    echo -e "${InvDkGray}${CWhite}Tailscale Connection Commandline                                                                               ${CClear}"
-
-    if [ "$tsoperatingmode" == "Custom" ]; then
-      echo -e "${CWhite}${CGreen}$customcmdline${CClear}"
-    else
-      if [ "$exitnode" -eq 1 ]; then exitnodecmd="--advertise-exit-node "; else exitnodecmd=""; fi
-      if [ "$advroutes" -eq 1 ]; then advroutescmd="--advertise-routes=$routes "; else advroutescmd=""; fi
-      if [ "$accroutes" -eq 1 ]; then accroutescmd="--accept-routes"; else accroutescmd=""; fi
-      if [ "$sshenable" -eq 1 ]; then sshcmd=" --ssh"; else sshcmd=""; fi
-      echo -e "${CWhite}${CGreen}$exitnodecmd$advroutescmd$accroutescmd$sshcmd${CClear}"
-    fi
-    echo ""
-    #read -rsp $'Press any key to continue...\n' -n1 key
 
   else
     echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - ERROR: Tailscale binaries not found. Please investigate." >> "$logfile"

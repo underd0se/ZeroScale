@@ -725,47 +725,24 @@ done
 
 timerloopconfig()
 {
-while true; do
   clear
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Timer Loop Configuration                                                              ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} Status Check Loop Interval                                                            ${CClear}"
   echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Please indicate how long the timer cycle should take between Tailscale Service and.${CClear}"
-  echo -e "${InvGreen} ${CClear} Connection checks."
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} (Default = 60 seconds)${CClear}"
+  echo -e "${InvGreen} ${CClear} Sets the delay in seconds between Tailscale service and connection checks.${CClear}"
+  echo -e "${InvGreen} ${CClear} (Current: ${CGreen}${timerloop}s${CClear}, Allowed: 10-300s, Default: 60s)"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-  echo -e "${InvGreen} ${CClear}"
-  echo -e "${InvGreen} ${CClear} Current: ${CGreen}$timerloop sec${CClear}"
   echo ""
-  read -p "Please enter value (1-999)? (e=Exit): " EnterTimerLoop
-  case $EnterTimerLoop in
-    [1-9])
-      timerloop=$EnterTimerLoop
-      saveconfig
-      timer=$timerloop
-    ;;
-
-    [1-9][0-9])
-      timerloop=$EnterTimerLoop
-      saveconfig
-      timer=$timerloop
-    ;;
-
-    [1-9][0-9][0-9])
-      timerloop=$EnterTimerLoop
-      saveconfig
-      timer=$timerloop
-    ;;
-
-    *)
-      echo ""
-      echo -e "${CClear}[Exiting]"
-      timer=$timerloop
-      break
-    ;;
+  read -p "Enter new interval in seconds (10-300, e=Cancel): " EnterTimerLoop
+  case "$EnterTimerLoop" in
+    [0-9]|[0-9][0-9]|[0-9][0-9][0-9])
+      if [ "$EnterTimerLoop" -ge 10 ] && [ "$EnterTimerLoop" -le 300 ]; then
+        timerloop=$EnterTimerLoop
+        saveconfig
+        timer=$timerloop
+        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Check interval set to ${timerloop}s." >> "$logfile"
+      fi
+      ;;
   esac
-
-done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------

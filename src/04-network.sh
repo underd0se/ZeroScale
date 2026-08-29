@@ -894,87 +894,77 @@ vsetup()
       saveconfig
     fi
 
-    if tailscaleready; then tsinstalleddisp="Installed"; else tsinstalleddisp="Not Installed"; fi
-    if [ "$exitnode" -eq 0 ]; then exitnodedisp="No"; elif [ "$exitnode" -eq 1 ]; then exitnodedisp="Yes"; fi
-    if [ "$advroutes" -eq 0 ]; then advroutesdisp="No"; elif [ "$advroutes" -eq 1 ]; then advroutesdisp="Yes ($routes)"; fi
-    if [ "$accroutes" -eq 0 ]; then accroutesdisp="No"; elif [ "$accroutes" -eq 1 ]; then accroutesdisp="Yes"; fi
-    if [ "$sshenable" -eq 0 ]; then sshenabledisp="No"; elif [ "$sshenable" -eq 1 ]; then sshenabledisp="Yes"; fi
+    if tailscaleready; then tsinstalleddisp="${CGreen}Installed${CClear}"; else tsinstalleddisp="${CDkGray}Not Installed${CClear}"; fi
+    if [ "$exitnode" -eq 0 ]; then exitnodedisp="${CDkGray}Disabled${CClear}"; else exitnodedisp="${CGreen}Enabled${CClear}"; fi
+    if [ "$advroutes" -eq 0 ]; then advroutesdisp="${CDkGray}Disabled${CClear}"; else advroutesdisp="${CGreen}Enabled ($routes)${CClear}"; fi
+    if [ "$accroutes" -eq 0 ]; then accroutesdisp="${CDkGray}Disabled${CClear}"; else accroutesdisp="${CGreen}Enabled${CClear}"; fi
+    if [ "$sshenable" -eq 0 ]; then sshenabledisp="${CDkGray}Disabled${CClear}"; else sshenabledisp="${CGreen}Enabled${CClear}"; fi
     tsver=$(tailscale version | awk 'NR==1 {print $1}') >/dev/null 2>&1
     if [ -z "$tsver" ]; then tsver="0.00"; fi
-
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Main Setup and Configuration Menu                                             ${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to perform high level${CClear}"
-    echo -e "${InvGreen} ${CClear} actions in the management of the ZeroScale script.${CClear}"
-    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-    echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 1)${CClear} : Install Tailscale Entware Package(s)         : ${CGreen}$tsinstalleddisp${CClear}"
 
     printf "\33[2K\r"
     printf "${CGreen}\r[Checking Services...Stand By]"
 
     /opt/etc/init.d/S06tailscaled check >/dev/null 2>&1
     tsservice=$?
-    if [ $tsservice -ne 0 ]; then tsservicedisp="Stopped"; else tsservicedisp="Started"; fi
+    if [ $tsservice -ne 0 ]; then tsservicedisp="${CDkGray}Stopped${CClear}"; else tsservicedisp="${CGreen}Started${CClear}"; fi
 
     tailscale status >/dev/null 2>&1
     tsconn=$?
-    if [ $tsconn -ne 0 ]; then tsconndisp="Disconnected"; else tsconndisp="Connected"; fi
+    if [ $tsconn -ne 0 ]; then tsconndisp="${CDkGray}Disconnected${CClear}"; else tsconndisp="${CGreen}Connected${CClear}"; fi
 
     printf "\33[2K\r"
+    clear
 
-    if [ "$tsinstalleddisp" == "Installed" ]; then
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}-- ${CGreen}(R)${CClear}e-${CGreen}(S)${CClear}tart / S${CGreen}(T)${CClear}op Tailscale Service${CClear}      |--- ${CGreen}$tsservicedisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}-- ${CGreen}(U)${CClear}p / ${CGreen}(D)${CClear}own Tailscale Connection${CClear}           |--- ${CGreen}$tsconndisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}-- U${CGreen}(P)${CClear}date Tailscale Binary to latest version  |--- ${CGreen}v$tsver${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}-- Update Tailscale Binary to latest ${CGreen}(B)${CRed}ETA${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}-- ${CGreen}(F)${CClear}orce Downgrade to Older Tailscale version${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}-- ${CGreen}(I)${CClear}ssue Connection '--reset' Command${CClear}"
-    fi
-
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 2)${CClear} : Uninstall Tailscale Entware Package(s)${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 3)${CClear} : Set Tailscale Operating Mode                 : ${CGreen}$tsoperatingmode${CClear}"
-    if [ "$tsoperatingmode" == "Custom" ]; then
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  |-${CClear}-- Edit Custom ${InvGreen}${CWhite}(O)${CClear}peration Mode Settings${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear}${CDkGray} : Configure this Router as Exit Node           : $exitnodedisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear}${CDkGray} : Advertise Routes on this router              : $advroutesdisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear}${CDkGray} : Enable Site-to-Site functionality on router  : $accroutesdisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear}${CDkGray} : Enable Tailscale SSH server                  : $sshenabledisp${CClear}"
-    else
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 4)${CClear} : Configure this Router as Exit Node           : ${CGreen}$exitnodedisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 5)${CClear} : Advertise Routes on this router              : ${CGreen}$advroutesdisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 6)${CClear} : Enable Site-to-Site functionality on router  : ${CGreen}$accroutesdisp${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 7)${CClear} : Enable Tailscale SSH server                  : ${CGreen}$sshenabledisp${CClear}"
-    fi
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Main Setup & Management                                                     ${CClear}"
     echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} Manage Tailscale service, routing features, and script configuration.${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 8)${CClear} : Custom configuration options for ZeroScale${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( 9)${CClear} : Force reinstall Entware dependencies${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Check for latest updates${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Uninstall ZeroScale${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}TAILSCALE SERVICE & PACKAGES${CClear}"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 1)${CClear} Install Tailscale Package     : [ $tsinstalleddisp ]"
     if tailscaleready; then
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( L)${CClear} : Launch ZeroScale in Monitoring Mode (${CGreen}sh /jffs/scripts/zeroscale.sh${CClear})"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( M)${CClear} : Launch ZeroScale in Monitoring Mode using SCREEN (${CGreen}sh /jf..ts/zeroscale.sh -screen${CClear})"
-    else
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}( L) : Launch ZeroScale in Monitoring Mode              : Unavailable (install Tailscale first)${CClear}"
-      echo -e "${InvGreen} ${CClear} ${InvDkGray}( M) : Launch ZeroScale using SCREEN                   : Unavailable (install Tailscale first)${CClear}"
+      echo -e "${InvGreen} ${CClear}   ${CDkGray}├─${CClear} ${CGreen}(R)${CClear}estart / ${CGreen}(S)${CClear}tart / S${CGreen}(T)${CClear}op    : [ $tsservicedisp ]"
+      echo -e "${InvGreen} ${CClear}   ${CDkGray}├─${CClear} ${CGreen}(U)${CClear}p / ${CGreen}(D)${CClear}own Connection        : [ $tsconndisp ]"
+      echo -e "${InvGreen} ${CClear}   ${CDkGray}├─${CClear} Tailscale Binary (v$tsver)     : U${CGreen}(P)${CClear}date / ${CGreen}(B)${CClear}eta / ${CGreen}(F)${CClear}orce Downgrade"
+      echo -e "${InvGreen} ${CClear}   ${CDkGray}└─${CClear} Connection Reset ${CGreen}(I)${CClear}            : Issue '--reset' Command"
     fi
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}  | ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}( e)${CClear} : Exit${CClear}"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 2)${CClear} Uninstall Tailscale Package"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}ROUTER NETWORKING & MODES${CClear}"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 3)${CClear} Operating Mode                : [ ${CGreen}$tsoperatingmode${CClear} ]"
+    if [ "$tsoperatingmode" == "Custom" ]; then
+      echo -e "${InvGreen} ${CClear}   ${CDkGray}└─${CClear} Edit Custom ${InvGreen}${CWhite}(O)${CClear}peration Mode Settings"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 4)${CClear}${CDkGray} Router as Exit Node           : [ $exitnodedisp ] (Managed by Custom)"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 5)${CClear}${CDkGray} Advertise Subnet Routes       : [ $advroutesdisp ] (Managed by Custom)"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 6)${CClear}${CDkGray} Accept Subnet Routes          : [ $accroutesdisp ] (Managed by Custom)"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 7)${CClear}${CDkGray} Tailscale SSH Server          : [ $sshenabledisp ] (Managed by Custom)"
+    else
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 4)${CClear} Router as Exit Node           : [ $exitnodedisp ]"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 5)${CClear} Advertise Subnet Routes       : [ $advroutesdisp ]"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 6)${CClear} Accept Subnet Routes          : [ $accroutesdisp ]"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 7)${CClear} Tailscale SSH Server          : [ $sshenabledisp ]"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}CONFIGURATION & MAINTENANCE${CClear}"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 8)${CClear} ZeroScale Configuration       : Watchdog, Timers, Alerts, Cron"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( 9)${CClear} Reinstall Dependencies        : screen, timeout"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(10)${CClear} Check for ZeroScale Updates"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(11)${CClear} Uninstall ZeroScale"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}LAUNCH & RUNTIME${CClear}"
+    if tailscaleready; then
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( L)${CClear} Launch Monitor (Foreground)   : zeroscale"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( M)${CClear} Launch Monitor in SCREEN      : zeroscale -screen"
+    else
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}( L) Launch Monitor (Foreground)   : (Unavailable - install Tailscale first)"
+      echo -e "${InvGreen} ${CClear}   ${InvDkGray}( M) Launch Monitor in SCREEN      : (Unavailable - install Tailscale first)"
+    fi
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}( e)${CClear} Exit"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo ""
-    if [ "$tsinstalleddisp" == "Installed" ]; then
-      if [ "$tsoperatingmode" == "Custom" ]; then
-        read -p "Please select? (1-11, R/S/T/U/D/P/B/F/I/O/L/M, e=Exit): " SelectSlot
-      else
-        read -p "Please select? (1-11, R/S/T/U/D/P/B/F/I/L/M, e=Exit): " SelectSlot
-      fi
-    else
-      read -p "Please select? (1-11, e=Exit): " SelectSlot
-    fi
+    read -p "Select an option (1-11, e=Exit): " SelectSlot
       case $SelectSlot in
 
         [Rr]) echo ""; restarttsc;;
@@ -1038,7 +1028,7 @@ vsetup()
              sshts
            fi ;;
 
-        8) installdependencies;;
+        8) vconfig;;
 
         9) reinstalldependencies;;
 
@@ -1046,14 +1036,87 @@ vsetup()
 
         11) vuninstall;;
 
-        [Ee]) echo -e "${CClear}"; timer=$timerloop; break;;
+        [Ee]|[Qq]) echo -e "${CClear}"; timer=$timerloop; break;;
 
       esac
   done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# vconfig is a function that provides a UI to choose various options for ZeroScale
+# Instant toggle helpers for configuration options
+
+togglekeepalive()
+{
+  if [ "$keepalive" -eq 1 ]; then
+    keepalive=0
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Keepalive watchdog disabled." >> "$logfile"
+  else
+    keepalive=1
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Keepalive watchdog enabled." >> "$logfile"
+  fi
+  saveconfig
+}
+
+togglepersistentsettings()
+{
+  if [ "$persistentsettings" -eq 1 ]; then
+    persistentsettings=0
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Keep Settings Persistent disabled." >> "$logfile"
+  else
+    persistentsettings=1
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Keep Settings Persistent enabled." >> "$logfile"
+  fi
+  saveconfig
+}
+
+toggleautostart()
+{
+  if [ "$autostart" -eq 1 ]; then
+    if [ -f /jffs/scripts/post-mount ]; then
+      sed -i -e '/zeroscale\.sh/d' -e '/tailmon-zero\.sh/d' -e '/tailmon\.sh/d' /jffs/scripts/post-mount >/dev/null 2>&1
+    fi
+    autostart=0
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Autostart on boot disabled." >> "$logfile"
+  else
+    if [ -f /jffs/scripts/post-mount ]; then
+      if ! grep -q -F "(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale" /jffs/scripts/post-mount; then
+        echo "(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale" >> /jffs/scripts/post-mount
+      fi
+    else
+      echo "#!/bin/sh" > /jffs/scripts/post-mount
+      echo "" >> /jffs/scripts/post-mount
+      echo "(sleep 30 && /jffs/scripts/zeroscale.sh -screen) & # Added by ZeroScale" >> /jffs/scripts/post-mount
+      chmod 755 /jffs/scripts/post-mount
+    fi
+    autostart=1
+    echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Autostart on boot enabled." >> "$logfile"
+  fi
+  saveconfig
+}
+
+logsizeconfig()
+{
+  clear
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} Event Log Retention Size                                                              ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Sets the maximum number of rows retained in the event log (zeroscale.log).${CClear}"
+  echo -e "${InvGreen} ${CClear} (Current: ${CGreen}${logsize} rows${CClear}, Allowed: 100-9999, 0 to disable, Default: 2000)"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  echo ""
+  read -p "Enter max log rows (100-9999, 0=Disable, e=Cancel): " NEWLOGSIZE
+  case "$NEWLOGSIZE" in
+    [0-9]|[0-9][0-9]|[0-9][0-9][0-9]|[0-9][0-9][0-9][0-9])
+      if [ "$NEWLOGSIZE" -eq 0 ] || { [ "$NEWLOGSIZE" -ge 100 ] && [ "$NEWLOGSIZE" -le 9999 ]; }; then
+        logsize=$NEWLOGSIZE
+        saveconfig
+        echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Event log size configured for $logsize rows." >> "$logfile"
+      fi
+      ;;
+  esac
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# vconfig provides a categorized, low-cognitive-load Configuration UI for ZeroScale
 
 vconfig()
 {
@@ -1066,171 +1129,101 @@ vconfig()
 
   while true; do
 
-    if [ "$keepalive" -eq 0 ]; then
-      keepalivedisp="No"
+    if [ "$keepalive" -eq 1 ]; then
+      keepalivedisp="${CGreen}Enabled${CClear}"
     else
-      keepalivedisp="Yes"
+      keepalivedisp="${CDkGray}Disabled${CClear}"
     fi
 
-    if [ "$persistentsettings" -eq 0 ]; then
-      persistentsettingsdisp="No"
+    if [ "$persistentsettings" -eq 1 ]; then
+      persistentsettingsdisp="${CGreen}Enabled${CClear}"
     else
-      persistentsettingsdisp="Yes"
+      persistentsettingsdisp="${CDkGray}Disabled${CClear}"
+    fi
+
+    if [ "$autostart" -eq 1 ]; then
+      autostartdisp="${CGreen}Enabled${CClear}"
+    else
+      autostartdisp="${CDkGray}Disabled${CClear}"
     fi
 
     if [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "0" ]; then
-      amtmemailsuccfaildisp="Disabled"
+      amtmdisp="${CDkGray}Disabled${CClear}"
     elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "0" ]; then
-      amtmemailsuccfaildisp="Success"
+      amtmdisp="${CGreen}Success only${CClear}"
     elif [ "$amtmemailsuccess" == "0" ] && [ "$amtmemailfailure" == "1" ]; then
-      amtmemailsuccfaildisp="Failure"
+      amtmdisp="${CGreen}Failures only${CClear}"
     elif [ "$amtmemailsuccess" == "1" ] && [ "$amtmemailfailure" == "1" ]; then
-      amtmemailsuccfaildisp="Success, Failure"
+      amtmdisp="${CGreen}Success & Failures${CClear}"
     else
-      amtmemailsuccfaildisp="Disabled"
+      amtmdisp="${CDkGray}Disabled${CClear}"
     fi
 
-    rldisp=""
-    if [ "$amtmemailsuccess" = "1" ] || [ "$amtmemailfailure" = "1" ]
-      then
-        if [ "$ratelimit" = "0" ]; then
-          rldisp="| ${CRed}RL"
-        else
-          rldisp="| ${CGreen}RL:$ratelimit/h"
-        fi
+    if [ "$amtmemailsuccess" = "1" ] || [ "$amtmemailfailure" = "1" ]; then
+      if [ "$ratelimit" = "0" ]; then
+        rldisp="${CRed}(No Rate Limit)${CClear}"
+      else
+        rldisp="${CGreen}(RL: ${ratelimit}/h)${CClear}"
+      fi
+    else
+      rldisp=""
     fi
 
-    if [ "$autostart" -eq 0 ]; then
-      autostartdisp="Disabled"
-    elif [ "$autostart" -eq 1 ]; then
-      autostartdisp="Enabled"
+    if [ "$schedule" = "1" ]; then
+      schedhrs="$(printf "%02d" "$schedulehrs")"
+      schedmin="$(printf "%02d" "$schedulemin")"
+      [ "$track" = "1" ] && trackname="Beta" || trackname="Stable"
+      scheddisp="${CGreen}Enabled @ $schedhrs:$schedmin ($trackname)${CClear}"
+    else
+      scheddisp="${CDkGray}Disabled${CClear}"
     fi
 
-    #scheduler colors and indicators
-    if [ "$schedule" = "0" ]
-    then
-       schedtime="${CDkGray}01:00${CClear}"
-    elif [ "$schedule" = "1" ]
-    then
-       schedhrs="$(printf "%02d" "$schedulehrs")"
-       schedmin="$(printf "%02d" "$schedulemin")"
-       schedtime="${CGreen}$schedhrs:$schedmin${CClear}"
+    if [ "$logsize" -eq 0 ]; then
+      logsizedisp="${CDkGray}Disabled${CClear}"
+    else
+      logsizedisp="${CGreen}${logsize} rows${CClear}"
     fi
 
     clear
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Configuration Option                                                          ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} ZeroScale Configuration Menu                                                          ${CClear}"
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
-    echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
+    echo -e "${InvGreen} ${CClear} Modify daemon parameters, UI refresh timers, alert settings, and schedules.${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo -e "${InvGreen} ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Keep Tailscale Service Alive                 : ${CGreen}$keepalivedisp"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Timer Check Loop Interval                    : ${CGreen}${timerloop}sec"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Custom Event Log size (rows)                 : ${CGreen}$logsize"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : AMTM Email Notifications / Rate Limiting     : ${CGreen}$amtmemailsuccfaildisp $rldisp"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : Keep settings on Tailscale Entware updates   : ${CGreen}$persistentsettingsdisp"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Autostart ZeroScale on Reboot                  : ${CGreen}$autostartdisp"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Schedule ZeroScale + Tailscale Autoupdate      : ${CGreen}$schedtime${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
-    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}DAEMON & HEALTH MONITOR${CClear}"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(1)${CClear} Keepalive Watchdog Check       : [ $keepalivedisp ]"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(2)${CClear} Keep Settings Persistent       : [ $persistentsettingsdisp ]"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(3)${CClear} Autostart on Router Boot       : [ $autostartdisp ]"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}INTERFACE & LOGGING${CClear}"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(4)${CClear} Status Check Interval          : [ ${CGreen}${timerloop}s${CClear} ]"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(5)${CClear} Event Log Retention Max        : [ $logsizedisp ]"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}NOTIFICATIONS & AUTOMATION${CClear}"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(6)${CClear} AMTM Email Notifications       : [ $amtmdisp ] $rldisp"
+    echo -e "${InvGreen} ${CClear}   ${InvDkGray}${CWhite}(7)${CClear} Scheduled Autoupdate Track     : [ $scheddisp ]"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo -e "${InvGreen} ${CClear} ${CDkGray}(1-3: Instant Toggle | 4-7: Configure | e: Exit to Menu)${CClear}"
     echo ""
-    read -p "Please select? (1-7, e=Exit): " SelectSlot
+    read -p "Select an option (1-7, e=Exit): " SelectSlot
       case $SelectSlot in
-        1)
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Keep Tailscale Service Alive                                                          ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate if you want ZeroScale to check the status of the Tailscale Service${CClear}"
-          echo -e "${InvGreen} ${CClear} and restart it if necessary? While Tailscale overall is fairly stable, there are${CClear}"
-          echo -e "${InvGreen} ${CClear} instances where the service with terminate."
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} (Default = Yes)${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo ""
-          echo -e "${CClear}Current: ${CGreen}$keepalivedisp${CClear}"
-          echo ""
-          echo -e "Keep Alive?"
-          if promptyn "[y/n]: "
-            then
-              keepalive=1
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale keepalive enabled." >> "$logfile"
-            else
-              keepalive=0
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale keepalive disabled." >> "$logfile"
-          fi
-          saveconfig
-        ;;
-
-        2) timerloopconfig
-        ;;
-
-        3)
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Custom Event Log Size                                                                 ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate below how large you would like your Event Log to grow. I'm a poet${CClear}"
-          echo -e "${InvGreen} ${CClear} and didn't even know it. By default, with 2000 rows, you will have many months of${CClear}"
-          echo -e "${InvGreen} ${CClear} Event Log data."
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Use 0 to Disable, max number of rows is 9999. (Default = 2000)"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo ""
-          echo -e "${CClear}Current: ${CGreen}$logsize${CClear}"
-          echo ""
-          read -p "Please enter Log Size (in rows)? (0-9999, e=Exit): " NEWLOGSIZE
-
-            if [ "$NEWLOGSIZE" == "e" ]; then
-              echo -e "\n[Exiting]"; sleep 1
-            elif [ "$NEWLOGSIZE" -ge 0 ] && [ "$NEWLOGSIZE" -le 9999 ]; then
-              logsize=$NEWLOGSIZE
-              saveconfig
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: Event log size configured for $logsize rows." >> "$logfile"
-            else
-              logsize=2000
-              saveconfig
-            fi
-        ;;
-
-        4)
+        1) togglekeepalive ;;
+        2) togglepersistentsettings ;;
+        3) toggleautostart ;;
+        4) timerloopconfig ;;
+        5) logsizeconfig ;;
+        6)
           amtmevents
           source "$config"
-        ;;
-
-        5)
-          clear
-          echo -e "${InvGreen} ${InvDkGray}${CWhite} Keep Settings Persistent on Tailscale Entware Updates                                 ${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} Please indicate if you want ZeroScale to check the Tailscale Service settings on${CClear}"
-          echo -e "${InvGreen} ${CClear} a regular basis to determine if settings are out-of-sync due to a possible${CClear}"
-          echo -e "${InvGreen} ${CClear} Tailscale Entware upgrade? A common side-effect after updating the Tailscale${CClear}"
-          echo -e "${InvGreen} ${CClear} Entware package is that it will remove your previously configured settings,${CClear}"
-          echo -e "${InvGreen} ${CClear} which could cause your router to no longer participate on your tailnet.${CClear}"
-          echo -e "${InvGreen} ${CClear}"
-          echo -e "${InvGreen} ${CClear} (Default = No)${CClear}"
-          echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-          echo ""
-          echo -e "${CClear}Current: ${CGreen}$persistentsettingsdisp${CClear}"
-          echo ""
-          echo -e "Keep Settings Persistent?"
-          if promptyn "[y/n]: "
-            then
-              persistentsettings=1
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale Keep Settings Persistent enabled." >> "$logfile"
-            else
-              persistentsettings=0
-              echo -e "$(date +'%b %d %Y %X') $($timeoutcmd$timeoutsec nvram get lan_hostname) ZEROSCALE[$$] - INFO: ZeroScale Keep Settings Persistent disabled." >> "$logfile"
-          fi
-          saveconfig
-        ;;
-
-        6) autostart;;
-
-        7) scheduleautoupdates;;
-
-        [Ee]) echo -e "${CClear}\n[Exiting]"; sleep 1; resettimer=1; break ;;
-
+          ;;
+        7) scheduleautoupdates ;;
+        [Ee]|[Qq])
+          echo -e "${CClear}\n[Exiting]"
+          sleep 1
+          resettimer=1
+          break
+          ;;
       esac
   done
 }

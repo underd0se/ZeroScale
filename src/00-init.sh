@@ -17,7 +17,7 @@ unset LD_LIBRARY_PATH
 export SCREENDIR="${HOME}/.screen"
 
 #Static Variables - please do not change
-version="1.0.1"
+version="1.1.0"
 beta=0                                                               # Beta indicator on/off
 track=0                                                              # Stable (0) / Beta (1) Track subscription
 apppath="/jffs/scripts/zeroscale.sh"                                   # Static path to the app
