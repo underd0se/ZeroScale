@@ -213,6 +213,16 @@ void refresh_tailscale_status(void) {
     }
     if (strlen(cfg->tsver) == 0) snprintf(cfg->tsver, sizeof(cfg->tsver), "1.102.2");
 
+    // Fetch self IP
+    char self_ip[40] = {0};
+    FILE *sif = popen("tailscale ip -4 2>/dev/null", "r");
+    if (sif) {
+        if (fgets(self_ip, sizeof(self_ip), sif)) {
+            self_ip[strcspn(self_ip, "\r\n")] = 0;
+        }
+        pclose(sif);
+    }
+
     // Refresh peer table
     g_app.peer_count = 0;
     FILE *pf = popen("tailscale status 2>/dev/null", "r");
@@ -234,14 +244,16 @@ void refresh_tailscale_status(void) {
                 if (n >= 5) snprintf(p->status, sizeof(p->status), "%s", status);
                 else snprintf(p->status, sizeof(p->status), "-");
 
-                p->is_self = (strstr(p->status, "self") != NULL || strstr(line, "self") != NULL);
+                p->is_self = (g_app.peer_count == 0 || (strlen(self_ip) > 0 && strcmp(p->ip, self_ip) == 0));
                 p->is_exit = (strstr(p->status, "offers exit node") != NULL || strstr(p->status, "exit node") != NULL);
                 p->is_online = (strstr(p->status, "offline") == NULL);
                 p->is_idle = (strstr(p->status, "idle") != NULL);
                 p->is_active = (strstr(p->status, "active") != NULL && !p->is_self);
                 p->is_direct = (strstr(p->status, "direct") != NULL);
                 
-                if (strstr(p->status, "relay") != NULL) {
+                if (p->is_self) {
+                    snprintf(p->relay_info, sizeof(p->relay_info), "Local Router (Self)");
+                } else if (strstr(p->status, "relay") != NULL) {
                     snprintf(p->relay_info, sizeof(p->relay_info), "DERP Relay");
                 } else if (p->is_direct) {
                     snprintf(p->relay_info, sizeof(p->relay_info), "Direct Connection");
