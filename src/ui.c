@@ -348,7 +348,7 @@ static void draw_dashboard(void) {
 
     // Bottom Status & Timer
     int pct = cfg->timerloop > 0 ? ((cfg->timerloop - g_app.countdown) * 100 / cfg->timerloop) : 0;
-    tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Click buttons or peers | Enter: Inspect Peer | Option+Drag: Copy | q: Quit]", g_app.countdown, pct);
+    tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Click / Enter: Inspect | %s: Copy | q: Quit]", g_app.countdown, pct, g_app.copy_hint);
 }
 
 static void draw_unified_config_view(void) {

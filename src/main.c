@@ -8,6 +8,63 @@ static void handle_sigint(int sig) {
     g_app.running = 0;
 }
 
+void detect_terminal(void) {
+    // Default fallback
+    snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+    snprintf(g_app.term_name, sizeof(g_app.term_name), "Terminal");
+
+    const char *tp = getenv("TERM_PROGRAM");
+    const char *term = getenv("TERM");
+
+    if (tp) {
+        if (strcasestr(tp, "ghostty")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Ghostty");
+            return;
+        } else if (strcasestr(tp, "kitty")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Kitty");
+            return;
+        } else if (strcasestr(tp, "wezterm")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "WezTerm");
+            return;
+        } else if (strcasestr(tp, "alacritty")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Alacritty");
+            return;
+        } else if (strcasestr(tp, "Apple_Terminal")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Fn+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Terminal.app");
+            return;
+        } else if (strcasestr(tp, "iTerm")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Fn+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "iTerm2");
+            return;
+        }
+    }
+
+    if (term) {
+        if (strcasestr(term, "ghostty")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Ghostty");
+            return;
+        } else if (strcasestr(term, "kitty")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Kitty");
+            return;
+        } else if (strcasestr(term, "alacritty")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Alacritty");
+            return;
+        } else if (strcasestr(term, "foot")) {
+            snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
+            snprintf(g_app.term_name, sizeof(g_app.term_name), "Foot");
+            return;
+        }
+    }
+}
+
 void app_init(void) {
     memset(&g_app, 0, sizeof(g_app));
     g_app.running = 1;
@@ -16,6 +73,8 @@ void app_init(void) {
 
     signal(SIGINT, handle_sigint);
     signal(SIGTERM, handle_sigint);
+
+    detect_terminal();
 
     tb_init();
     tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
@@ -666,7 +725,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.2.1\n");
+            printf("ZeroScale v0.2.2\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -i, --install      Install Entware Tailscale and ZeroScale services\n");

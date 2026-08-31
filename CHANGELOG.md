@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.2] - 2026-08-30
+
+### 🖥️ Dynamic Terminal Detection & Platform-Agnostic Copying
+
+ZeroScale `v0.2.2` introduces automatic client terminal emulator detection and displays dynamic copy shortcut hints.
+
+#### 🌟 Added & Enhanced
+* **Dynamic Terminal Detection (`detect_terminal`):**
+  * Auto-detects client terminal emulators (Ghostty, Kitty, Alacritty, WezTerm, iTerm2, Apple Terminal) via `$TERM_PROGRAM` and `$TERM`.
+  * Renders accurate native text selection shortcut hints directly in the dashboard footer (`Shift+Drag: Copy` for Ghostty/Kitty/Linux vs. `Fn+Drag: Copy` for Terminal.app/iTerm2).
+* **Platform-Agnostic Controls Documentation:**
+  * Updated README navigation table to reflect universal text selection modifiers across all terminal emulators.
+
+---
+
 ## [0.2.1] - 2026-08-29
 
 ### 🔧 Fixes & Accessibility Polish

@@ -33,7 +33,7 @@ void log_event(const char *level, const char *fmt, ...) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.2.1");
+    snprintf(cfg->version, sizeof(cfg->version), "0.2.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     cfg->timerloop = 60;
     cfg->keepalive = 1;

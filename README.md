@@ -120,7 +120,7 @@ cd ZeroScale
 | Context | Key / Action | Description |
 |:---|:---:|:---|
 | **Anywhere** | `Mouse Left-Click` | Activate buttons, select peers, toggle settings |
-| **Anywhere** | `Option (⌥) or Shift (⇧) + Drag` | Text selection and copying (macOS) |
+| **Anywhere** | `Shift + Drag` (or `Fn + Drag`) | Native terminal text selection and copying across all terminal emulators |
 | **Dashboard** | `↑` / `↓` | Navigate between Header Action Bar and Peer Node Table |
 | **Dashboard** | `←` / `→` | Cycle through Header Action Bar buttons when focused |
 | **Dashboard** | `Enter` | Trigger focused button or open Peer Inspector for selected node |

@@ -126,6 +126,10 @@ typedef struct {
     // Peer Detail Modal
     int peer_detail_selected_btn;
 
+    // Terminal & Selection
+    char copy_hint[32];
+    char term_name[32];
+
     int running;
 } AppState;
 
@@ -133,6 +137,7 @@ extern AppState g_app;
 
 // Core Prototypes
 void app_init(void);
+void detect_terminal(void);
 void app_cleanup(void);
 void load_config(void);
 void save_config(void);
