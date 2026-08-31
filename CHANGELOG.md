@@ -21,6 +21,9 @@ ZeroScale `v0.3.1` delivers a comprehensive adaptive responsive design overhaul 
   * Dynamic value column alignment (shifts to column 28 on `< 80` cols) with concise label phrasing.
   * Safe character truncation (`%.*s`) prevents long subnet CIDRs and custom flags from overflowing dialog borders.
   * Adaptive compact navigation bar hint `[ ↑/↓: Nav | Enter: Edit | 1-15: Select | Esc: Back ]`.
+* **📊 Per-Node Rx/Tx Traffic Metrics & Activity Tracking:**
+  * Added dedicated `Traffic (Tx/Rx)` (`▲ Tx │ ▼ Rx`) and `Last Activity` statistics to the Peer Node Inspector modal (`Enter` / click).
+  * Automatically extracts real-time transfer throughput and timestamps from Tailscale engine telemetry.
 * **Adaptive Action Modals & Dialogs:**
   * **Peer Inspector Modal:** Responsive modal width (`box_w`), adapted 11/15-col label widths, shortened button labels (`[Ping] [TS Ping] [Close]`), and updated mouse hitbox handlers.
   * **Input & Confirmation Dialogs:** Dynamically bounded width (`box_w`) and single-line responsive button alignment.

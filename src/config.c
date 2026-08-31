@@ -40,6 +40,41 @@ void log_event(const char *level, const char *fmt, ...) {
     fclose(f);
 }
 
+static void extract_peer_metrics(const char *status, char *tx_out, size_t tx_sz, char *rx_out, size_t rx_sz, char *seen_out, size_t seen_sz) {
+    snprintf(tx_out, tx_sz, "0 B");
+    snprintf(rx_out, rx_sz, "0 B");
+    snprintf(seen_out, seen_sz, "Active now");
+
+    if (!status || strlen(status) == 0) return;
+
+    if (strstr(status, "offline") != NULL) {
+        snprintf(seen_out, seen_sz, "Offline");
+    } else if (strstr(status, "idle") != NULL) {
+        snprintf(seen_out, seen_sz, "Idle");
+    }
+
+    const char *tx_pos = strstr(status, "tx ");
+    if (tx_pos) {
+        char tmp[32] = {0};
+        sscanf(tx_pos + 3, "%31[^,; \t]", tmp);
+        if (strlen(tmp) > 0) snprintf(tx_out, tx_sz, "%s", tmp);
+    }
+
+    const char *rx_pos = strstr(status, "rx ");
+    if (rx_pos) {
+        char tmp[32] = {0};
+        sscanf(rx_pos + 3, "%31[^,; \t]", tmp);
+        if (strlen(tmp) > 0) snprintf(rx_out, rx_sz, "%s", tmp);
+    }
+
+    const char *seen_pos = strstr(status, "last seen ");
+    if (seen_pos) {
+        char tmp[48] = {0};
+        sscanf(seen_pos + 10, "%47[^,;\n]", tmp);
+        if (strlen(tmp) > 0) snprintf(seen_out, seen_sz, "%s", tmp);
+    }
+}
+
 void load_mock_data(void) {
     AppConfig *cfg = &g_app.config;
     snprintf(cfg->version, sizeof(cfg->version), "0.3.1");
@@ -74,8 +109,11 @@ void load_mock_data(void) {
     snprintf(p0->name, sizeof(p0->name), "router-gw");
     snprintf(p0->user, sizeof(p0->user), "baris@");
     snprintf(p0->os, sizeof(p0->os), "linux");
-    snprintf(p0->status, sizeof(p0->status), "active; offers exit node");
+    snprintf(p0->status, sizeof(p0->status), "active; offers exit node; tx 1.82 GB rx 3.45 GB");
     snprintf(p0->relay_info, sizeof(p0->relay_info), "Local Router (Self)");
+    snprintf(p0->tx_str, sizeof(p0->tx_str), "1.82 GB");
+    snprintf(p0->rx_str, sizeof(p0->rx_str), "3.45 GB");
+    snprintf(p0->last_seen, sizeof(p0->last_seen), "Active now (Self)");
     p0->is_self = 1;
     p0->is_exit = 1;
     p0->is_online = 1;
@@ -87,8 +125,11 @@ void load_mock_data(void) {
     snprintf(p1->name, sizeof(p1->name), "macbook-pro");
     snprintf(p1->user, sizeof(p1->user), "baris@");
     snprintf(p1->os, sizeof(p1->os), "macOS");
-    snprintf(p1->status, sizeof(p1->status), "active; direct 192.168.50.150:41641");
+    snprintf(p1->status, sizeof(p1->status), "active; direct 192.168.50.150:41641; tx 142.5 MB rx 88.1 MB");
     snprintf(p1->relay_info, sizeof(p1->relay_info), "Direct Connection");
+    snprintf(p1->tx_str, sizeof(p1->tx_str), "142.5 MB");
+    snprintf(p1->rx_str, sizeof(p1->rx_str), "88.1 MB");
+    snprintf(p1->last_seen, sizeof(p1->last_seen), "Active now");
     p1->is_online = 1;
     p1->is_active = 1;
     p1->is_direct = 1;
@@ -100,8 +141,11 @@ void load_mock_data(void) {
     snprintf(p2->name, sizeof(p2->name), "iphone-16-pro");
     snprintf(p2->user, sizeof(p2->user), "baris@");
     snprintf(p2->os, sizeof(p2->os), "iOS");
-    snprintf(p2->status, sizeof(p2->status), "idle; direct [2a02:8108:...]:41641");
+    snprintf(p2->status, sizeof(p2->status), "idle; direct [2a02:8108:...]:41641; tx 12.4 KB rx 5.1 KB");
     snprintf(p2->relay_info, sizeof(p2->relay_info), "Direct Connection (IPv6)");
+    snprintf(p2->tx_str, sizeof(p2->tx_str), "12.4 KB");
+    snprintf(p2->rx_str, sizeof(p2->rx_str), "5.1 KB");
+    snprintf(p2->last_seen, sizeof(p2->last_seen), "Idle (5m ago)");
     p2->is_online = 1;
     p2->is_idle = 1;
     p2->is_direct = 1;
@@ -113,8 +157,11 @@ void load_mock_data(void) {
     snprintf(p3->name, sizeof(p3->name), "unraid-homelab");
     snprintf(p3->user, sizeof(p3->user), "baris@");
     snprintf(p3->os, sizeof(p3->os), "linux");
-    snprintf(p3->status, sizeof(p3->status), "active; offers exit node; direct 192.168.50.200:41641");
+    snprintf(p3->status, sizeof(p3->status), "active; offers exit node; direct 192.168.50.200:41641; tx 890.2 MB rx 1.12 GB");
     snprintf(p3->relay_info, sizeof(p3->relay_info), "Direct Connection (Exit Node)");
+    snprintf(p3->tx_str, sizeof(p3->tx_str), "890.2 MB");
+    snprintf(p3->rx_str, sizeof(p3->rx_str), "1.12 GB");
+    snprintf(p3->last_seen, sizeof(p3->last_seen), "Active now");
     p3->is_online = 1;
     p3->is_active = 1;
     p3->is_exit = 1;
@@ -127,8 +174,11 @@ void load_mock_data(void) {
     snprintf(p4->name, sizeof(p4->name), "work-thinkpad");
     snprintf(p4->user, sizeof(p4->user), "baris@");
     snprintf(p4->os, sizeof(p4->os), "windows");
-    snprintf(p4->status, sizeof(p4->status), "idle; relay \"fra\", tx 45120 rx 89210");
+    snprintf(p4->status, sizeof(p4->status), "idle; relay \"fra\", tx 45.1 KB rx 89.2 KB");
     snprintf(p4->relay_info, sizeof(p4->relay_info), "DERP Relay (Frankfurt)");
+    snprintf(p4->tx_str, sizeof(p4->tx_str), "45.1 KB");
+    snprintf(p4->rx_str, sizeof(p4->rx_str), "89.2 KB");
+    snprintf(p4->last_seen, sizeof(p4->last_seen), "Idle (22m ago)");
     p4->is_online = 1;
     p4->is_idle = 1;
 
@@ -139,8 +189,11 @@ void load_mock_data(void) {
     snprintf(p5->name, sizeof(p5->name), "backup-nas");
     snprintf(p5->user, sizeof(p5->user), "baris@");
     snprintf(p5->os, sizeof(p5->os), "synology");
-    snprintf(p5->status, sizeof(p5->status), "offline");
+    snprintf(p5->status, sizeof(p5->status), "offline, last seen 14d ago");
     snprintf(p5->relay_info, sizeof(p5->relay_info), "Offline");
+    snprintf(p5->tx_str, sizeof(p5->tx_str), "0 B");
+    snprintf(p5->rx_str, sizeof(p5->rx_str), "0 B");
+    snprintf(p5->last_seen, sizeof(p5->last_seen), "14d ago");
     p5->is_online = 0;
 
     // Populate Mock Logs
@@ -552,6 +605,8 @@ void refresh_tailscale_status(void) {
                 } else {
                     snprintf(p->relay_info, sizeof(p->relay_info), "-");
                 }
+
+                extract_peer_metrics(p->status, p->tx_str, sizeof(p->tx_str), p->rx_str, sizeof(p->rx_str), p->last_seen, sizeof(p->last_seen));
 
                 g_app.peer_count++;
             }

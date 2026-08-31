@@ -48,6 +48,9 @@ typedef struct {
     char user[48];
     char os[24];
     char status[128];
+    char tx_str[32];
+    char rx_str[32];
+    char last_seen[48];
     int is_self;
     int is_exit;
     int is_online;

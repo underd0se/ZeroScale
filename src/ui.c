@@ -624,7 +624,7 @@ static void draw_peer_detail_modal(void) {
 
     int box_w = (width >= 86) ? 76 : (width - 4);
     if (box_w < 38) box_w = width - 2;
-    int box_h = 13;
+    int box_h = 15;
     int start_x = (width - box_w) / 2;
     int start_y = (height - box_h) / 2;
 
@@ -635,28 +635,34 @@ static void draw_peer_detail_modal(void) {
     draw_modal_row(start_x, start_y + 4, box_w, "OS / Platform", p->os, TB_WHITE | TB_BOLD, TB_HI_BLACK);
     draw_modal_row(start_x, start_y + 5, box_w, "Owner / User", p->user, TB_WHITE, TB_HI_BLACK);
     draw_modal_row(start_x, start_y + 6, box_w, "Connection", p->relay_info, p->is_direct ? (TB_GREEN | TB_BOLD) : TB_YELLOW, TB_HI_BLACK);
-    draw_modal_row(start_x, start_y + 7, box_w, "Tailnet Status", p->status, p->is_online ? (TB_GREEN | TB_BOLD) : TB_HI_BLACK, TB_HI_BLACK);
+
+    char traffic_buf[64];
+    snprintf(traffic_buf, sizeof(traffic_buf), "▲ %s  │  ▼ %s", p->tx_str, p->rx_str);
+    draw_modal_row(start_x, start_y + 7, box_w, "Traffic (Tx/Rx)", traffic_buf, TB_CYAN | TB_BOLD, TB_HI_BLACK);
+
+    draw_modal_row(start_x, start_y + 8, box_w, "Last Activity", p->last_seen, p->is_online ? (TB_GREEN | TB_BOLD) : TB_HI_BLACK, TB_HI_BLACK);
+    draw_modal_row(start_x, start_y + 9, box_w, "Tailnet Status", p->status, p->is_online ? TB_WHITE : TB_HI_BLACK, TB_HI_BLACK);
 
     if (box_w < 50) {
-        tb_printf(start_x + 3, start_y + 9, TB_WHITE | TB_DIM, TB_HI_BLACK, "Tab: Select | Enter: Run");
+        tb_printf(start_x + 3, start_y + 11, TB_WHITE | TB_DIM, TB_HI_BLACK, "Tab: Select | Enter: Run");
     } else {
-        tb_printf(start_x + 3, start_y + 9, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
+        tb_printf(start_x + 3, start_y + 11, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
     }
 
     for (int x = start_x + 1; x < start_x + box_w - 1; x++) {
-        tb_printf(x, start_y + 10, TB_WHITE, TB_HI_BLACK, "─");
+        tb_printf(x, start_y + 12, TB_WHITE, TB_HI_BLACK, "─");
     }
 
     if (box_w >= 54) {
-        draw_modal_btn(start_x + 3, start_y + 11, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
-        draw_modal_btn(start_x + 13, start_y + 11, "Tailscale Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
-        draw_modal_btn(start_x + 34, start_y + 11, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
+        draw_modal_btn(start_x + 3, start_y + 13, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
+        draw_modal_btn(start_x + 13, start_y + 13, "Tailscale Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
+        draw_modal_btn(start_x + 34, start_y + 13, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
     } else {
-        draw_modal_btn(start_x + 2, start_y + 11, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
-        draw_modal_btn(start_x + 11, start_y + 11, "TS Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
-        draw_modal_btn(start_x + 23, start_y + 11, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
+        draw_modal_btn(start_x + 2, start_y + 13, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
+        draw_modal_btn(start_x + 11, start_y + 13, "TS Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
+        draw_modal_btn(start_x + 23, start_y + 13, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
     }
-    tb_set_cell(start_x + box_w - 1, start_y + 11, 0x2502 /* │ */, TB_CYAN | TB_BOLD, TB_HI_BLACK);
+    tb_set_cell(start_x + box_w - 1, start_y + 13, 0x2502 /* │ */, TB_CYAN | TB_BOLD, TB_HI_BLACK);
 }
 
 static void draw_logs_view(void) {

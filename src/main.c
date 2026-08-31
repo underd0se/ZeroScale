@@ -595,12 +595,42 @@ static void do_peer_ping(void) {
             show_toast("[Mock Ping] %s (%s): 11.8 ms", p->name, p->ip);
             return;
         }
-        char cmd[256];
-        snprintf(cmd, sizeof(cmd), "ping -c 3 %s >/dev/null 2>&1", p->ip);
         show_toast("Pinging %s (%s)...", p->name, p->ip);
-        int res = system(cmd);
-        if (res == 0) show_toast("Ping to %s: SUCCESS (Host Online)", p->name);
-        else show_toast("Ping to %s: FAILED / TIMEOUT", p->name);
+        ui_draw();
+        tb_present();
+
+        char cmd[256];
+#if defined(__APPLE__) || defined(__MACH__)
+        snprintf(cmd, sizeof(cmd), "ping -c 1 -t 1 %s 2>&1", p->ip);
+#else
+        snprintf(cmd, sizeof(cmd), "ping -c 1 -W 1 %s 2>&1", p->ip);
+#endif
+
+        FILE *f = popen(cmd, "r");
+        int success = 0;
+        char latency[32] = {0};
+
+        if (f) {
+            char line[128];
+            while (fgets(line, sizeof(line), f)) {
+                char *time_str = strstr(line, "time=");
+                if (time_str) {
+                    sscanf(time_str + 5, "%31s", latency);
+                    success = 1;
+                }
+            }
+            int code = pclose(f);
+            if (code == 0) success = 1;
+        }
+
+        if (success && strlen(latency) > 0) {
+            show_toast("Ping to %s: SUCCESS (%s)", p->name, latency);
+        } else if (success) {
+            show_toast("Ping to %s: SUCCESS (Host Online)", p->name);
+        } else {
+            show_toast("Ping to %s: FAILED / TIMEOUT (1s)", p->name);
+        }
+        tb_invalidate();
     }
 }
 
@@ -612,12 +642,45 @@ static void do_peer_ts_ping(void) {
             show_toast("[Mock Tailscale Ping] direct to %s: 14.2 ms", p->name);
             return;
         }
-        char cmd[256];
-        snprintf(cmd, sizeof(cmd), "tailscale ping -c 1 %s >/dev/null 2>&1", p->ip);
         show_toast("Testing Tailscale WireGuard latency to %s...", p->name);
-        int res = system(cmd);
-        if (res == 0) show_toast("Tailscale Ping to %s: Connected!", p->name);
-        else show_toast("Tailscale Ping to %s: Unreachable", p->name);
+        ui_draw();
+        tb_present();
+
+        char cmd[256];
+        snprintf(cmd, sizeof(cmd), "tailscale ping --timeout=1s -c 1 %s 2>&1", p->ip);
+
+        FILE *f = popen(cmd, "r");
+        int success = 0;
+        char latency_info[64] = {0};
+
+        if (f) {
+            char line[256];
+            while (fgets(line, sizeof(line), f)) {
+                if (strstr(line, "pong from") != NULL) {
+                    char *in_pos = strstr(line, " in ");
+                    char *via_pos = strstr(line, " via ");
+                    if (in_pos) {
+                        snprintf(latency_info, sizeof(latency_info), "%s", in_pos + 4);
+                        latency_info[strcspn(latency_info, "\r\n")] = 0;
+                    } else if (via_pos) {
+                        snprintf(latency_info, sizeof(latency_info), "%s", via_pos + 5);
+                        latency_info[strcspn(latency_info, "\r\n")] = 0;
+                    }
+                    success = 1;
+                    break;
+                }
+            }
+            pclose(f);
+        }
+
+        if (success && strlen(latency_info) > 0) {
+            show_toast("Tailscale Ping to %s: Connected in %s", p->name, latency_info);
+        } else if (success) {
+            show_toast("Tailscale Ping to %s: Connected!", p->name);
+        } else {
+            show_toast("Tailscale Ping to %s: Unreachable / Timeout (1s)", p->name);
+        }
+        tb_invalidate();
     }
 }
 
@@ -651,11 +714,11 @@ static void handle_peer_detail_mouse(struct tb_event *ev) {
         int height = tb_height();
         int box_w = (width >= 86) ? 76 : (width - 4);
         if (box_w < 38) box_w = width - 2;
-        int box_h = 13;
+        int box_h = 15;
         int start_x = (width - box_w) / 2;
         int start_y = (height - box_h) / 2;
 
-        if (ev->y == start_y + 11) {
+        if (ev->y == start_y + 13) {
             if (box_w >= 54) {
                 if (ev->x >= start_x + 3 && ev->x < start_x + 11) {
                     g_app.peer_detail_selected_btn = 0;
