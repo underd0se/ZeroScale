@@ -154,6 +154,94 @@ void load_mock_data(void) {
     snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:04:30 RT-AX86U ZEROSCALE[1024] - INFO: Exit node mode advertised and active.");
 }
 
+void detect_router_info(void) {
+    AppConfig *cfg = &g_app.config;
+    if (g_app.mock_mode) {
+        snprintf(cfg->router_model, sizeof(cfg->router_model), "RT-AX86U Pro");
+        snprintf(cfg->router_firmware, sizeof(cfg->router_firmware), "3004.388.8_2");
+        return;
+    }
+
+    snprintf(cfg->router_model, sizeof(cfg->router_model), "Asus Router");
+    snprintf(cfg->router_firmware, sizeof(cfg->router_firmware), "");
+
+    FILE *f_mod = popen("nvram get model 2>/dev/null", "r");
+    if (f_mod) {
+        if (fgets(cfg->router_model, sizeof(cfg->router_model), f_mod)) {
+            cfg->router_model[strcspn(cfg->router_model, "\r\n")] = 0;
+        }
+        pclose(f_mod);
+    }
+
+    FILE *f_fw = popen("nvram get buildno 2>/dev/null", "r");
+    if (f_fw) {
+        if (fgets(cfg->router_firmware, sizeof(cfg->router_firmware), f_fw)) {
+            cfg->router_firmware[strcspn(cfg->router_firmware, "\r\n")] = 0;
+        }
+        pclose(f_fw);
+    }
+}
+
+int sanitize_custom_flags(const char *input, char *output, size_t maxlen) {
+    if (!input || !output || maxlen == 0) return 0;
+    size_t out_idx = 0;
+    for (size_t i = 0; input[i] != '\0' && out_idx + 1 < maxlen; i++) {
+        char c = input[i];
+        if (isalnum((unsigned char)c) || c == ' ' || c == '-' || c == '_' || c == '=' ||
+            c == ':' || c == '.' || c == ',' || c == '/' || c == '@') {
+            output[out_idx++] = c;
+        }
+    }
+    output[out_idx] = '\0';
+    return (int)out_idx;
+}
+
+static int is_valid_single_cidr(const char *token) {
+    if (!token || strlen(token) == 0) return 0;
+    int a, b, c, d, mask;
+    char extra;
+    if (sscanf(token, "%d.%d.%d.%d/%d%c", &a, &b, &c, &d, &mask, &extra) == 5) {
+        if (a >= 0 && a <= 255 &&
+            b >= 0 && b <= 255 &&
+            c >= 0 && c <= 255 &&
+            d >= 0 && d <= 255 &&
+            mask >= 0 && mask <= 32) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int validate_cidr_list(const char *input, char *output, size_t maxlen) {
+    if (!input || !output || maxlen == 0) return 0;
+    char temp[256];
+    snprintf(temp, sizeof(temp), "%s", input);
+
+    char clean_out[256] = {0};
+    char *token = strtok(temp, ",; ");
+    int count = 0;
+
+    while (token) {
+        while (*token == ' ' || *token == '\t') token++;
+        size_t len = strlen(token);
+        while (len > 0 && (token[len-1] == ' ' || token[len-1] == '\t')) token[--len] = '\0';
+
+        if (len > 0) {
+            if (!is_valid_single_cidr(token)) {
+                return 0;
+            }
+            if (count > 0) strncat(clean_out, ",", sizeof(clean_out) - strlen(clean_out) - 1);
+            strncat(clean_out, token, sizeof(clean_out) - strlen(clean_out) - 1);
+            count++;
+        }
+        token = strtok(NULL, ",; ");
+    }
+
+    if (count == 0) return 0;
+    snprintf(output, maxlen, "%s", clean_out);
+    return count;
+}
+
 static void get_router_lan_subnet(char *dest, size_t maxlen) {
     FILE *f = popen("nvram get lan_ipaddr 2>/dev/null", "r");
     if (f) {

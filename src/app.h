@@ -77,6 +77,8 @@ typedef struct {
     int schedulehrs;
     int schedulemin;
     int track; // 0=Stable, 1=Beta
+    char router_model[32];
+    char router_firmware[32];
     int daemon_running;
     int tailnet_connected;
 } AppConfig;
@@ -142,9 +144,12 @@ extern AppState g_app;
 void app_init(void);
 void load_mock_data(void);
 void detect_terminal(void);
+void detect_router_info(void);
 void app_cleanup(void);
 void load_config(void);
 void save_config(void);
+int sanitize_custom_flags(const char *input, char *output, size_t maxlen);
+int validate_cidr_list(const char *input, char *output, size_t maxlen);
 void refresh_tailscale_status(void);
 void load_logs(void);
 void log_event(const char *level, const char *fmt, ...);

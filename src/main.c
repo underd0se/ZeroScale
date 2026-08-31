@@ -8,6 +8,22 @@ static void handle_sigint(int sig) {
     g_app.running = 0;
 }
 
+static void handle_fatal_signal(int sig) {
+    tb_shutdown();
+    const char *signame = "Unknown";
+    switch (sig) {
+        case SIGSEGV: signame = "SIGSEGV (Segmentation Fault)"; break;
+        case SIGBUS:  signame = "SIGBUS (Bus Error)"; break;
+        case SIGILL:  signame = "SIGILL (Illegal Instruction)"; break;
+        case SIGFPE:  signame = "SIGFPE (Floating Point Exception)"; break;
+        case SIGABRT: signame = "SIGABRT (Aborted)"; break;
+        case SIGHUP:  signame = "SIGHUP (Hangup / Terminal Closed)"; break;
+        default: break;
+    }
+    fprintf(stderr, "\n[ZeroScale Error] Caught fatal signal %d: %s. Terminal state cleanly restored.\n\n", sig, signame);
+    exit(128 + sig);
+}
+
 void detect_terminal(void) {
     // Default fallback
     snprintf(g_app.copy_hint, sizeof(g_app.copy_hint), "Shift+Drag");
@@ -93,8 +109,15 @@ void app_init(void) {
 
     signal(SIGINT, handle_sigint);
     signal(SIGTERM, handle_sigint);
+    signal(SIGHUP, handle_fatal_signal);
+    signal(SIGSEGV, handle_fatal_signal);
+    signal(SIGBUS, handle_fatal_signal);
+    signal(SIGILL, handle_fatal_signal);
+    signal(SIGFPE, handle_fatal_signal);
+    signal(SIGABRT, handle_fatal_signal);
 
     detect_terminal();
+    detect_router_info();
     if (!g_app.mock_mode) {
         sanitize_legacy_symlinks();
     }
@@ -603,18 +626,31 @@ static void handle_logs_mouse(struct tb_event *ev) {
 
 static void save_input_action(void) {
     if (g_app.input_target == INPUT_ROUTES) {
-        snprintf(g_app.config.routes, sizeof(g_app.config.routes), "%s", g_app.input_buf);
+        char validated[128] = {0};
+        if (strlen(g_app.input_buf) > 0) {
+            if (!validate_cidr_list(g_app.input_buf, validated, sizeof(validated))) {
+                show_toast("Invalid CIDR format (e.g. 192.168.1.0/24)");
+                return;
+            }
+            snprintf(g_app.config.routes, sizeof(g_app.config.routes), "%s", validated);
+        } else {
+            snprintf(g_app.config.routes, sizeof(g_app.config.routes), "%s", g_app.input_buf);
+        }
         save_config();
         log_event("INFO", "Subnet Routes updated to: %s", g_app.config.routes);
-        show_toast("Subnet Routes updated to: %s", g_app.config.routes);
+        show_toast("Subnet Routes updated: %s", g_app.config.routes);
     } else if (g_app.input_target == INPUT_LOGSIZE) {
         int size = atoi(g_app.input_buf);
+        if (size < 100) size = 100;
+        if (size > 10000) size = 10000;
         g_app.config.logsize = size;
         save_config();
         log_event("INFO", "Log retention updated to: %d rows.", g_app.config.logsize);
-        show_toast("Log Retention updated to: %d rows", g_app.config.logsize);
+        show_toast("Log Retention updated: %d rows", g_app.config.logsize);
     } else if (g_app.input_target == INPUT_CUSTOMPARAMS) {
-        snprintf(g_app.config.customparams, sizeof(g_app.config.customparams), "%s", g_app.input_buf);
+        char sanitized[256] = {0};
+        sanitize_custom_flags(g_app.input_buf, sanitized, sizeof(sanitized));
+        snprintf(g_app.config.customparams, sizeof(g_app.config.customparams), "%s", sanitized);
         save_config();
         log_event("INFO", "Custom Tailscale flags updated to: %s", g_app.config.customparams);
         show_toast("Custom Flags updated: %s", g_app.config.customparams);

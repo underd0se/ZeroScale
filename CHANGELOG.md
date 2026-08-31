@@ -9,14 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.4] - 2026-08-31
 
-### 🛡️ Interactive User Consent for Migration, Namespace Isolation & Safe Coexistence
+### 🛡️ Robustness & Safety, Dynamic Hardware Badges & Desktop Simulation
 
-ZeroScale `v0.2.4` introduces interactive migration prompts based on explicit user consent, strict CLI namespace isolation, non-invasive boot hook handling, and clean uninstallation with third-party reactivation guidance.
+ZeroScale `v0.2.4` introduces fatal crash signal recovery for clean terminal restoration, dynamic router hardware and firmware detection in the header banner, strict IPv4 CIDR validation, custom flag shell sanitization, interactive migration prompts, and native desktop simulation mode (`--mock`).
 
 #### 🌟 Added & Enhanced
+* **Fatal Crash Signal Recovery (`handle_fatal_signal`):**
+  * Registered POSIX signal handlers (`SIGSEGV`, `SIGBUS`, `SIGILL`, `SIGFPE`, `SIGABRT`, `SIGHUP`) to guarantee that `tb_shutdown()` is executed before termination.
+  * Terminal cursor visibility, mouse reporting, and raw mode are cleanly and reliably restored even in abnormal crash events.
+* **Dynamic Router Model & Firmware Header Badge:**
+  * Automatically queries `nvram get model` (e.g. `RT-AX86U`, `GT-AXE16000`) and `nvram get buildno` (e.g. `3004.388.8_2`) to render a hardware badge in the dashboard header.
+* **Strict IPv4 CIDR Validator & Custom Flags Sanitizer:**
+  * Validates subnet route inputs against IPv4 CIDR format (`X.X.X.X/Y`, `0-255`, `/0-32`) with inline syntax error toasts.
+  * Sanitizes custom flags (`customparams`) to prevent dangerous shell escape characters.
+* **Native Desktop Simulation Mode (`--mock` / `make sim`):**
+  * Allows building and running ZeroScale natively on macOS/Linux desktops with synthetic multi-device tailnet peers, exit nodes, and logs.
 * **Interactive Migration Prompt on Existing Setup Detection:**
-  * When an existing TAILMON installation is detected during setup, the installer now prompts the user interactively (`[y/N]`) before importing configuration or disabling background hooks.
-  * If the user declines, all third-party files, configuration, cron jobs, and boot hooks remain 100% untouched.
+  * When an existing TAILMON installation is detected during setup, the installer prompts the user interactively (`[y/N]`) before importing configuration.
 * **Strict CLI Namespace Isolation:**
   * Removed the `/opt/bin/tailmon` compatibility symlink. ZeroScale now installs strictly and exclusively to `/opt/bin/zeroscale` to prevent command collisions.
 * **Non-Invasive Boot Hook & Daemon Management:**
