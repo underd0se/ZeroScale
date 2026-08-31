@@ -356,37 +356,45 @@ static void trigger_config_action(int idx) {
     }
 }
 
+static int s_config_pending_digit = 0;
+static time_t s_config_digit_time = 0;
+
 static void handle_config_key(struct tb_event *ev) {
-    if (ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q') {
+    if (ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
+        s_config_pending_digit = 0;
         g_app.mode = VIEW_DASHBOARD;
-    } else if (ev->key == TB_KEY_ARROW_DOWN) {
+        return;
+    }
+
+    if (s_config_pending_digit == 1) {
+        s_config_pending_digit = 0;
+        if (ev->ch >= '0' && ev->ch <= '5') {
+            int num = 10 + (ev->ch - '0');
+            if (num >= 10 && num <= 15) {
+                trigger_config_action(num - 1);
+                return;
+            }
+        } else if (ev->key == TB_KEY_ENTER || ev->ch == ' ') {
+            trigger_config_action(0);
+            return;
+        } else {
+            trigger_config_action(0);
+        }
+    }
+
+    if (ev->key == TB_KEY_ARROW_DOWN) {
         if (g_app.config_selected_idx < 14) g_app.config_selected_idx++;
     } else if (ev->key == TB_KEY_ARROW_UP) {
         if (g_app.config_selected_idx > 0) g_app.config_selected_idx--;
     } else if (ev->key == TB_KEY_ENTER || ev->ch == ' ') {
         trigger_config_action(g_app.config_selected_idx);
     } else if (ev->ch == '1') {
-        trigger_config_action(0);
-    } else if (ev->ch == '2') {
-        trigger_config_action(1);
-    } else if (ev->ch == '3') {
-        trigger_config_action(2);
-    } else if (ev->ch == '4') {
-        trigger_config_action(3);
-    } else if (ev->ch == '5') {
-        trigger_config_action(4);
-    } else if (ev->ch == '6') {
-        trigger_config_action(5);
-    } else if (ev->ch == '7') {
-        trigger_config_action(6);
-    } else if (ev->ch == '8') {
-        trigger_config_action(7);
-    } else if (ev->ch == '9') {
-        trigger_config_action(8);
-    } else if (ev->ch == '0' || ev->ch == 'a' || ev->ch == 'A') {
-        trigger_config_action(9);
-    } else if (ev->ch == 's' || ev->ch == 'S') {
-        trigger_config_action(10);
+        s_config_pending_digit = 1;
+        s_config_digit_time = time(NULL);
+        g_app.config_selected_idx = 0;
+        show_toast("Option (1)... [Press 0-5 for (10)-(15), or Enter for (1)]");
+    } else if (ev->ch >= '2' && ev->ch <= '9') {
+        trigger_config_action(ev->ch - '1');
     } else if (ev->ch == 'u' || ev->ch == 'U') {
         trigger_config_action(11);
     } else if (ev->ch == 'x' || ev->ch == 'X') {
@@ -761,6 +769,14 @@ int main(int argc, char *argv[]) {
         if (now - g_app.last_status_refresh >= 5) {
             g_app.last_status_refresh = now;
             refresh_tailscale_status();
+        }
+
+        // Auto-resolve pending digit 1 in config mode after 1.5 seconds
+        if (g_app.mode == VIEW_CONFIG && s_config_pending_digit == 1) {
+            if (now - s_config_digit_time >= 2) {
+                s_config_pending_digit = 0;
+                trigger_config_action(0);
+            }
         }
     }
 
