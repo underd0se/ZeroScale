@@ -173,7 +173,7 @@ void toggle_autostart(void) {
                "  chmod 755 /jffs/scripts/post-mount; "
                "fi");
     } else {
-        system("sed -i -e '/zeroscale/d' -e '/tailmon/d' -e '/S06tailscaled/d' /jffs/scripts/post-mount 2>/dev/null");
+        system("sed -i -e '/zeroscale/d' -e '/S06tailscaled/d' /jffs/scripts/post-mount 2>/dev/null");
     }
     save_config();
     log_event("INFO", "Autostart on boot %s.", g_app.config.autostart ? "enabled" : "disabled");

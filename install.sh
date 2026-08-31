@@ -77,31 +77,47 @@ esac
 printf "%b[+] Target architecture verified: %s%b\n" "${C_GREEN}" "${ARCH_NAME}" "${C_RESET}"
 
 # -------------------------------------------------------------------------------------------------------------------------
-# Step 3: Detect & Migrate Legacy Tailmon Setup
+# Step 3: Check for Existing Tailmon Setup
 
 mkdir -p "${CONFIG_DIR}"
 
 if [ -d "${LEGACY_DIR}" ] || [ -f "/jffs/scripts/tailmon" ] || [ -f "/jffs/scripts/tailmon.sh" ]; then
-    printf "%b[*] Legacy Tailmon installation detected. Migrating settings...%b\n" "${C_YELLOW}" "${C_RESET}"
-
-    # Terminate legacy background screen/scripts
-    screen -S tailmon -X quit 2>/dev/null || true
-    killall -9 tailmon tailmon.sh 2>/dev/null || true
-
-    # Migrate config if not already present
-    if [ -f "${LEGACY_DIR}/tailmon.cfg" ] && [ ! -f "${CONFIG_DIR}/zeroscale.cfg" ]; then
-        cp "${LEGACY_DIR}/tailmon.cfg" "${CONFIG_DIR}/zeroscale.cfg"
-        printf "%b[+] Migrated configuration from %s/tailmon.cfg -> %s/zeroscale.cfg%b\n" "${C_GREEN}" "${LEGACY_DIR}" "${CONFIG_DIR}" "${C_RESET}"
+    printf "\n%b[!] Existing TAILMON installation detected.%b\n" "${C_YELLOW}" "${C_RESET}"
+    printf "Note: Running two Tailscale management services simultaneously on low-RAM routers\n"
+    printf "can cause daemon conflicts and kernel memory limits.\n\n"
+    
+    # Read user choice from terminal (support curl | sh execution)
+    MIGRATE_CHOICE=""
+    if [ -t 0 ]; then
+        printf "%bWould you like to import your settings and disable TAILMON's boot hook? [y/N]: %b" "${C_BOLD}" "${C_RESET}"
+        read -r MIGRATE_CHOICE
+    elif [ -c /dev/tty ]; then
+        printf "%bWould you like to import your settings and disable TAILMON's boot hook? [y/N]: %b" "${C_BOLD}" "${C_RESET}" < /dev/tty
+        read -r MIGRATE_CHOICE < /dev/tty
     fi
 
-    # Clean legacy post-mount hooks
-    if [ -f "${POST_MOUNT}" ]; then
-        sed -i -e '/tailmon\.sh/d' -e '/tailmon -screen/d' "${POST_MOUNT}" 2>/dev/null || true
-    fi
+    case "${MIGRATE_CHOICE}" in
+        [yY]|[yY][eE][sS])
+            printf "%b[*] Importing TAILMON settings...%b\n" "${C_CYAN}" "${C_RESET}"
+            screen -S tailmon -X quit 2>/dev/null || true
+            killall -9 tailmon tailmon.sh 2>/dev/null || true
 
-    # Remove stale cron
-    cru d tailmon_autoupdate 2>/dev/null || true
-    printf "%b[+] Tailmon migration completed successfully.%b\n" "${C_GREEN}" "${C_RESET}"
+            if [ -f "${LEGACY_DIR}/tailmon.cfg" ] && [ ! -f "${CONFIG_DIR}/zeroscale.cfg" ]; then
+                cp "${LEGACY_DIR}/tailmon.cfg" "${CONFIG_DIR}/zeroscale.cfg"
+                printf "%b[+] Imported configuration from %s/tailmon.cfg -> %s/zeroscale.cfg%b\n" "${C_GREEN}" "${LEGACY_DIR}" "${CONFIG_DIR}" "${C_RESET}"
+            fi
+
+            if [ -f "${POST_MOUNT}" ]; then
+                sed -i -e '/tailmon\.sh/d' -e '/tailmon -screen/d' "${POST_MOUNT}" 2>/dev/null || true
+            fi
+            cru d tailmon_autoupdate 2>/dev/null || true
+            printf "%b[+] TAILMON migration completed.%b\n\n" "${C_GREEN}" "${C_RESET}"
+            ;;
+        *)
+            printf "%b[*] Keeping TAILMON installation untouched.%b\n" "${C_CYAN}" "${C_RESET}"
+            printf "%b[*] Please ensure only one Tailscale monitor is active to avoid daemon conflicts.%b\n\n" "${C_YELLOW}" "${C_RESET}"
+            ;;
+    esac
 fi
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -142,7 +158,6 @@ mv -f "${TMP_BIN}" "${TARGET_BIN}"
 # Create convenience symlinks in /opt/bin
 if [ -d "/opt/bin" ]; then
     ln -sf "${TARGET_BIN}" "/opt/bin/zeroscale"
-    ln -sf "${TARGET_BIN}" "/opt/bin/tailmon"
 fi
 
 # -------------------------------------------------------------------------------------------------------------------------

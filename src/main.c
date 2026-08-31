@@ -143,7 +143,7 @@ void install_zeroscale(void) {
 void uninstall_zeroscale(void) {
     show_splash("UNINSTALLING ZEROSCALE...", 600, TB_RED | TB_BOLD);
     system("/opt/etc/init.d/S06tailscaled stop 2>/dev/null; "
-           "sed -i -e '/zeroscale/d' -e '/tailmon/d' /jffs/scripts/post-mount 2>/dev/null; "
+           "sed -i -e '/zeroscale/d' /jffs/scripts/post-mount 2>/dev/null; "
            "cru d zeroscale_autoupdate 2>/dev/null");
     show_splash("UNINSTALL COMPLETE", 800, TB_HI_BLACK);
     tb_shutdown();
@@ -351,7 +351,7 @@ static void trigger_config_action(int idx) {
         case 14:
             request_confirm("Completely uninstall ZeroScale from router?",
                             "Uninstall",
-                            "killall -9 zeroscale 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' -e '/tailmon/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale /opt/bin/zeroscale /opt/bin/tailmon");
+                            "killall -9 zeroscale 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale /opt/bin/zeroscale");
             break;
         default: break;
     }
