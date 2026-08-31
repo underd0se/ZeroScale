@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] - 2026-08-31
+
+### 📱 Adaptive Mobile & Small-Screen Layout System
+
+ZeroScale `v0.3.1` delivers a comprehensive adaptive responsive design overhaul across the dashboard, peer table, configuration menu, and all modal dialogs for seamless operation on mobile SSH terminals and split-pane window layouts.
+
+#### 🌟 Added & Enhanced
+* **Concise State Badges on Small Screens:**
+  * Dynamically extracts concise key states (`Self`, `active`, `idle`, `exit node`, `offline`) from verbose Tailscale status strings when screen width is constrained (`width < 86`).
+  * Seamless 5-to-3 column responsive scaling without horizontal overflow or text wrapping.
+* **Responsive Configuration & Service Management View:**
+  * Dynamic value column alignment (shifts to column 28 on `< 80` cols) with concise label phrasing.
+  * Safe character truncation (`%.*s`) prevents long subnet CIDRs and custom flags from overflowing dialog borders.
+  * Adaptive compact navigation bar hint `[ ↑/↓: Nav | Enter: Edit | 1-15: Select | Esc: Back ]`.
+* **Adaptive Action Modals & Dialogs:**
+  * **Peer Inspector Modal:** Responsive modal width (`box_w`), adapted 11/15-col label widths, shortened button labels (`[Ping] [TS Ping] [Close]`), and updated mouse hitbox handlers.
+  * **Input & Confirmation Dialogs:** Dynamically bounded width (`box_w`) and single-line responsive button alignment.
+  * **Log Viewer:** Compact title and line indicator for narrow screens.
+
+---
+
 ## [0.3.0] - 2026-08-31
 
 ### 🔍 Live Peer Search & Multi-Mode Tailnet Sorting

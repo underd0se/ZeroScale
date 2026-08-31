@@ -42,7 +42,7 @@ void log_event(const char *level, const char *fmt, ...) {
 
 void load_mock_data(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.0");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.1");
     snprintf(cfg->tsver, sizeof(cfg->tsver), "1.102.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Kernel");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
@@ -265,7 +265,7 @@ static void get_router_lan_subnet(char *dest, size_t maxlen) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.0");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.1");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
     cfg->timerloop = 60;

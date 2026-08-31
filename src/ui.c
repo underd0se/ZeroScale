@@ -88,13 +88,25 @@ static void draw_modal_box(int x, int y, int w, int h, const char *title, uint32
     }
 }
 
+// Helper to get a concise status keyword on small/compact screens
+static const char *get_compact_peer_status(const PeerInfo *p) {
+    if (p->is_self) return "Self";
+    if (!p->is_online) return "offline";
+    if (p->is_exit) return "exit node";
+    if (p->is_active) return "active";
+    if (p->is_idle) return "idle";
+    return "online";
+}
+
 // Helper to draw a safely bounded label-value row inside a modal without overflowing
 static void draw_modal_row(int start_x, int y, int box_w, const char *label, const char *val, uint32_t val_fg, uint32_t bg) {
-    int max_val_len = box_w - 22;
-    if (max_val_len < 10) max_val_len = 10;
+    int lbl_w = (box_w < 55) ? 11 : 15;
+    int val_x = start_x + lbl_w + 5;
+    int max_val_len = box_w - lbl_w - 7;
+    if (max_val_len < 6) max_val_len = 6;
 
-    tb_printf(start_x + 3, y, TB_WHITE, bg, "%-15s: ", label);
-    tb_printf(start_x + 20, y, val_fg, bg, "%.*s", max_val_len, val);
+    tb_printf(start_x + 3, y, TB_WHITE, bg, "%-*s: ", lbl_w, label);
+    tb_printf(val_x, y, val_fg, bg, "%.*s", max_val_len, val);
     tb_set_cell(start_x + box_w - 1, y, 0x2502 /* │ */, TB_CYAN | TB_BOLD, bg);
 }
 
@@ -191,13 +203,21 @@ static void draw_dashboard(void) {
     int width = tb_width();
     int height = tb_height();
     AppConfig *cfg = &g_app.config;
+    int is_compact = (width < 80);
+    int is_wide = (width >= 96);
 
-    // Top Header Banner
+    // Row 1: Top Header Banner
     if (g_app.mock_mode) {
-        tb_printf(2, 1, TB_MAGENTA | TB_BOLD, 0, "ZeroScale v%s ── %s (%s) [MOCK SIMULATOR]", cfg->version, cfg->router_model, cfg->router_firmware);
+        if (is_compact) {
+            tb_printf(2, 1, TB_MAGENTA | TB_BOLD, 0, "ZeroScale v%s [MOCK]", cfg->version);
+        } else {
+            tb_printf(2, 1, TB_MAGENTA | TB_BOLD, 0, "ZeroScale v%s ── %s (%s) [MOCK SIMULATOR]", cfg->version, cfg->router_model, cfg->router_firmware);
+        }
     } else {
         if (strlen(cfg->router_model) > 0 && strcmp(cfg->router_model, "Asus Router") != 0) {
-            if (strlen(cfg->router_firmware) > 0) {
+            if (is_compact) {
+                tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale v%s ── %s", cfg->version, cfg->router_model);
+            } else if (strlen(cfg->router_firmware) > 0) {
                 tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale v%s ── %s (%s)", cfg->version, cfg->router_model, cfg->router_firmware);
             } else {
                 tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale v%s ── %s", cfg->version, cfg->router_model);
@@ -210,38 +230,77 @@ static void draw_dashboard(void) {
     time_t now = time(NULL);
     struct tm *tm_info = localtime(&now);
     char time_buf[64];
-    strftime(time_buf, sizeof(time_buf), "%a %b %d, %Y %H:%M:%S", tm_info);
-    tb_printf(width - 28, 1, TB_WHITE, 0, "%s", time_buf);
+    if (is_compact) {
+        strftime(time_buf, sizeof(time_buf), "%H:%M:%S", tm_info);
+        tb_printf(width - 10, 1, TB_WHITE, 0, "%s", time_buf);
+    } else {
+        strftime(time_buf, sizeof(time_buf), "%a %b %d, %Y %H:%M:%S", tm_info);
+        tb_printf(width - 28, 1, TB_WHITE, 0, "%s", time_buf);
+    }
 
     // Row 2: Service & Tailnet
-    tb_printf(2, 2, TB_WHITE, 0, "Service: [ ");
-    if (cfg->daemon_running) tb_printf(13, 2, TB_GREEN | TB_BOLD, 0, "Started");
-    else tb_printf(13, 2, TB_RED | TB_BOLD, 0, "Stopped");
-    tb_printf(21, 2, TB_WHITE, 0, "] (v%s)", cfg->tsver);
+    if (is_compact) {
+        tb_printf(2, 2, TB_WHITE, 0, "Svc: [");
+        if (cfg->daemon_running) tb_printf(8, 2, TB_GREEN | TB_BOLD, 0, "Started");
+        else tb_printf(8, 2, TB_RED | TB_BOLD, 0, "Stopped");
+        tb_printf(15, 2, TB_WHITE, 0, "] v%s", cfg->tsver);
 
-    tb_printf(35, 2, TB_HI_BLACK, 0, "│");
-    tb_printf(37, 2, TB_WHITE, 0, "Tailnet: [ ");
-    if (cfg->tailnet_connected) tb_printf(48, 2, TB_GREEN | TB_BOLD, 0, "Connected");
-    else tb_printf(48, 2, TB_RED | TB_BOLD, 0, "Disconnected");
-    tb_printf(58, 2, TB_WHITE, 0, "] (%s Mode)", cfg->opmode);
+        tb_printf(26, 2, TB_HI_BLACK, 0, "│");
+        tb_printf(28, 2, TB_WHITE, 0, "Tailnet: [");
+        if (cfg->tailnet_connected) tb_printf(38, 2, TB_GREEN | TB_BOLD, 0, "OK");
+        else tb_printf(38, 2, TB_RED | TB_BOLD, 0, "Off");
+        tb_printf(41, 2, TB_WHITE, 0, "] (%s)", cfg->opmode);
+    } else {
+        tb_printf(2, 2, TB_WHITE, 0, "Service: [ ");
+        if (cfg->daemon_running) tb_printf(13, 2, TB_GREEN | TB_BOLD, 0, "Started");
+        else tb_printf(13, 2, TB_RED | TB_BOLD, 0, "Stopped");
+        tb_printf(21, 2, TB_WHITE, 0, "] (v%s)", cfg->tsver);
+
+        tb_printf(35, 2, TB_HI_BLACK, 0, "│");
+        tb_printf(37, 2, TB_WHITE, 0, "Tailnet: [ ");
+        if (cfg->tailnet_connected) tb_printf(48, 2, TB_GREEN | TB_BOLD, 0, "Connected");
+        else tb_printf(48, 2, TB_RED | TB_BOLD, 0, "Disconnected");
+        tb_printf(58, 2, TB_WHITE, 0, "] (%s Mode)", cfg->opmode);
+    }
 
     // Row 3: Watchdog, Exit Node, Routes
-    tb_printf(2, 3, TB_WHITE, 0, "Watchdog: [ ");
-    if (cfg->keepalive) tb_printf(14, 3, TB_GREEN | TB_BOLD, 0, "Active");
-    else tb_printf(14, 3, TB_HI_BLACK, 0, "Off   ");
-    tb_printf(21, 3, TB_WHITE, 0, "] (%ds loop)", cfg->timerloop);
+    if (is_compact) {
+        tb_printf(2, 3, TB_WHITE, 0, "Dog: [");
+        if (cfg->keepalive) tb_printf(8, 3, TB_GREEN | TB_BOLD, 0, "On ");
+        else tb_printf(8, 3, TB_HI_BLACK, 0, "Off");
+        tb_printf(11, 3, TB_WHITE, 0, "] (%ds)", cfg->timerloop);
 
-    tb_printf(35, 3, TB_HI_BLACK, 0, "│");
-    tb_printf(37, 3, TB_WHITE, 0, "Exit Node: [ ");
-    if (cfg->exitnode) tb_printf(50, 3, TB_GREEN | TB_BOLD, 0, "Yes");
-    else tb_printf(50, 3, TB_HI_BLACK, 0, "No ");
-    tb_printf(54, 3, TB_WHITE, 0, "]  │ Routes: [ ");
-    if (cfg->advroutes) {
-        tb_printf(69, 3, TB_GREEN | TB_BOLD, 0, "%s", cfg->routes);
-        tb_printf(69 + (int)strlen(cfg->routes), 3, TB_WHITE, 0, " ]");
+        tb_printf(20, 3, TB_HI_BLACK, 0, "│");
+        tb_printf(22, 3, TB_WHITE, 0, "Exit: [");
+        if (cfg->exitnode) tb_printf(29, 3, TB_GREEN | TB_BOLD, 0, "Yes");
+        else tb_printf(29, 3, TB_HI_BLACK, 0, "No ");
+        tb_printf(32, 3, TB_WHITE, 0, "] │ Rts: [");
+        if (cfg->advroutes) {
+            int max_r_len = width - 46;
+            if (max_r_len < 4) max_r_len = 4;
+            tb_printf(42, 3, TB_GREEN | TB_BOLD, 0, "%.*s", max_r_len, cfg->routes);
+            tb_printf(42 + (int)strlen(cfg->routes) < width - 2 ? 42 + (int)strlen(cfg->routes) : width - 3, 3, TB_WHITE, 0, "]");
+        } else {
+            tb_printf(42, 3, TB_HI_BLACK, 0, "No]");
+        }
     } else {
-        tb_printf(69, 3, TB_HI_BLACK, 0, "No");
-        tb_printf(72, 3, TB_WHITE, 0, " ]");
+        tb_printf(2, 3, TB_WHITE, 0, "Watchdog: [ ");
+        if (cfg->keepalive) tb_printf(14, 3, TB_GREEN | TB_BOLD, 0, "Active");
+        else tb_printf(14, 3, TB_HI_BLACK, 0, "Off   ");
+        tb_printf(21, 3, TB_WHITE, 0, "] (%ds loop)", cfg->timerloop);
+
+        tb_printf(35, 3, TB_HI_BLACK, 0, "│");
+        tb_printf(37, 3, TB_WHITE, 0, "Exit Node: [ ");
+        if (cfg->exitnode) tb_printf(50, 3, TB_GREEN | TB_BOLD, 0, "Yes");
+        else tb_printf(50, 3, TB_HI_BLACK, 0, "No ");
+        tb_printf(54, 3, TB_WHITE, 0, "]  │ Routes: [ ");
+        if (cfg->advroutes) {
+            tb_printf(69, 3, TB_GREEN | TB_BOLD, 0, "%s", cfg->routes);
+            tb_printf(69 + (int)strlen(cfg->routes), 3, TB_WHITE, 0, " ]");
+        } else {
+            tb_printf(69, 3, TB_HI_BLACK, 0, "No");
+            tb_printf(72, 3, TB_WHITE, 0, " ]");
+        }
     }
 
     // Dividers
@@ -250,62 +309,75 @@ static void draw_dashboard(void) {
         tb_printf(x, 6, TB_HI_BLACK, 0, "─");
     }
 
-    // Row 5: Action Bar with htop-style background buttons & underlined shortcut keys
-    int is_wide = (width >= 96);
-    int x0 = 1;
+    // Row 5: Action Bar with htop-style background buttons
+    if (is_compact) {
+        int x0 = 1;
+        draw_header_btn(x0, 5, 0, "", "U", "p", 4);
+        draw_header_btn(x0 + 5, 5, 1, "", "D", "own", 6);
+        tb_printf(x0 + 12, 5, TB_HI_BLACK, 0, "│");
 
-    // Group 1: Tailnet (Up / Down)
-    tb_printf(x0, 5, TB_HI_BLACK, 0, "Tailnet:");
-    int btn0_x = x0 + 9;
-    draw_header_btn(btn0_x, 5, 0, "", "U", "p", 4);
-    int btn1_x = btn0_x + 5;
-    draw_header_btn(btn1_x, 5, 1, "", "D", "own", 6);
+        draw_header_btn(x0 + 14, 5, 2, "", "R", "est", 6);
+        draw_header_btn(x0 + 21, 5, 3, "", "S", "tart", 7);
+        draw_header_btn(x0 + 29, 5, 4, "S", "t", "op", 6);
+        tb_printf(x0 + 36, 5, TB_HI_BLACK, 0, "│");
 
-    int div1_x = btn1_x + 7;
-    tb_printf(div1_x, 5, TB_HI_BLACK, 0, "│");
+        draw_header_btn(x0 + 38, 5, 5, "", "L", "og", 5);
+        tb_printf(x0 + 44, 5, TB_HI_BLACK, 0, "│");
 
-    // Group 2: Tailscale (Restart / Start / Stop)
-    int ts_lbl_x = div1_x + 2;
-    if (is_wide) {
-        tb_printf(ts_lbl_x, 5, TB_HI_BLACK, 0, "Tailscale:");
-        ts_lbl_x += 11;
+        draw_header_btn(x0 + 46, 5, 6, "", "C", "fg", 5);
+        tb_printf(x0 + 52, 5, TB_HI_BLACK, 0, "│");
+
+        draw_header_btn(x0 + 54, 5, 7, "", "Q", "uit", 6);
     } else {
-        tb_printf(ts_lbl_x, 5, TB_HI_BLACK, 0, "TS:");
-        ts_lbl_x += 4;
+        int x0 = 1;
+        tb_printf(x0, 5, TB_HI_BLACK, 0, "Tailnet:");
+        int btn0_x = x0 + 9;
+        draw_header_btn(btn0_x, 5, 0, "", "U", "p", 4);
+        int btn1_x = btn0_x + 5;
+        draw_header_btn(btn1_x, 5, 1, "", "D", "own", 6);
+
+        int div1_x = btn1_x + 7;
+        tb_printf(div1_x, 5, TB_HI_BLACK, 0, "│");
+
+        int ts_lbl_x = div1_x + 2;
+        if (is_wide) {
+            tb_printf(ts_lbl_x, 5, TB_HI_BLACK, 0, "Tailscale:");
+            ts_lbl_x += 11;
+        } else {
+            tb_printf(ts_lbl_x, 5, TB_HI_BLACK, 0, "TS:");
+            ts_lbl_x += 4;
+        }
+        int btn2_x = ts_lbl_x;
+        draw_header_btn(btn2_x, 5, 2, "", "R", "estart", 9);
+        int btn3_x = btn2_x + 10;
+        draw_header_btn(btn3_x, 5, 3, "", "S", "tart", 7);
+        int btn4_x = btn3_x + 8;
+        draw_header_btn(btn4_x, 5, 4, "S", "t", "op", 6);
+
+        int div2_x = btn4_x + 7;
+        tb_printf(div2_x, 5, TB_HI_BLACK, 0, "│");
+
+        int btn5_x = div2_x + 2;
+        draw_header_btn(btn5_x, 5, 5, "", "L", "ogs", 6);
+
+        int div3_x = btn5_x + 7;
+        tb_printf(div3_x, 5, TB_HI_BLACK, 0, "│");
+
+        int btn6_x = div3_x + 2;
+        if (is_wide) {
+            draw_header_btn(btn6_x, 5, 6, "", "C", "onfiguration", 15);
+            btn6_x += 16;
+        } else {
+            draw_header_btn(btn6_x, 5, 6, "", "C", "onfig", 8);
+            btn6_x += 9;
+        }
+
+        int div4_x = btn6_x;
+        tb_printf(div4_x, 5, TB_HI_BLACK, 0, "│");
+
+        int btn7_x = div4_x + 2;
+        draw_header_btn(btn7_x, 5, 7, "", "Q", "uit", 6);
     }
-    int btn2_x = ts_lbl_x;
-    draw_header_btn(btn2_x, 5, 2, "", "R", "estart", 9);
-    int btn3_x = btn2_x + 10;
-    draw_header_btn(btn3_x, 5, 3, "", "S", "tart", 7);
-    int btn4_x = btn3_x + 8;
-    draw_header_btn(btn4_x, 5, 4, "S", "t", "op", 6);
-
-    int div2_x = btn4_x + 7;
-    tb_printf(div2_x, 5, TB_HI_BLACK, 0, "│");
-
-    // Group 3: Logs
-    int btn5_x = div2_x + 2;
-    draw_header_btn(btn5_x, 5, 5, "", "L", "ogs", 6);
-
-    int div3_x = btn5_x + 7;
-    tb_printf(div3_x, 5, TB_HI_BLACK, 0, "│");
-
-    // Group 4: Configuration
-    int btn6_x = div3_x + 2;
-    if (is_wide) {
-        draw_header_btn(btn6_x, 5, 6, "", "C", "onfiguration", 15);
-        btn6_x += 16;
-    } else {
-        draw_header_btn(btn6_x, 5, 6, "", "C", "onfig", 8);
-        btn6_x += 9;
-    }
-
-    int div4_x = btn6_x;
-    tb_printf(div4_x, 5, TB_HI_BLACK, 0, "│");
-
-    // Group 5: Quit
-    int btn7_x = div4_x + 2;
-    draw_header_btn(btn7_x, 5, 7, "", "Q", "uit", 6);
 
     // Peer Table Header
     if (strlen(g_app.peer_filter) > 0) {
@@ -350,7 +422,15 @@ static void draw_dashboard(void) {
             tb_printf(1, start_y + i, TB_WHITE, bg, " ");
         }
 
-        tb_printf(3, start_y + i, fg, bg, "%-16s %-19s %-15s %-8s %s", p->ip, p->name, p->user, p->os, p->status);
+        if (width >= 86) {
+            tb_printf(3, start_y + i, fg, bg, "%-16s %-19s %-15s %-8s %s", p->ip, p->name, p->user, p->os, p->status);
+        } else if (width >= 70) {
+            const char *st = get_compact_peer_status(p);
+            tb_printf(3, start_y + i, fg, bg, "%-15s %-18s %-8s %s", p->ip, p->name, p->os, st);
+        } else {
+            const char *st = get_compact_peer_status(p);
+            tb_printf(3, start_y + i, fg, bg, "%-15s %-14s %s", p->ip, p->name, st);
+        }
     }
 
     // Scroll Indicator
@@ -369,7 +449,11 @@ static void draw_dashboard(void) {
 
     // Bottom Status & Timer
     int pct = cfg->timerloop > 0 ? ((cfg->timerloop - g_app.countdown) * 100 / cfg->timerloop) : 0;
-    tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Enter: Inspect | /: Search | o: Sort | %s: Copy | q: Quit]", g_app.countdown, pct, g_app.copy_hint);
+    if (is_compact) {
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %02d%% ] [Enter: Inspect | /: Search | o: Sort | q: Quit]", g_app.countdown, pct);
+    } else {
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Enter: Inspect | /: Search | o: Sort | %s: Copy | q: Quit]", g_app.countdown, pct, g_app.copy_hint);
+    }
 }
 
 static void draw_unified_config_view(void) {
@@ -377,127 +461,137 @@ static void draw_unified_config_view(void) {
     int height = tb_height();
     AppConfig *cfg = &g_app.config;
     int cur = g_app.config_selected_idx;
+    int is_compact = (width < 80);
 
-    tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale Configuration & Service Management");
-    tb_printf(2, 2, TB_HI_BLACK, 0, "Manage watchdog, routing, operating modes, logs, alerts, and binary updates.");
+    if (is_compact) {
+        tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale Configuration");
+        tb_printf(2, 2, TB_HI_BLACK, 0, "Manage services, routing, logs, and settings.");
+    } else {
+        tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale Configuration & Service Management");
+        tb_printf(2, 2, TB_HI_BLACK, 0, "Manage watchdog, routing, operating modes, logs, alerts, and binary updates.");
+    }
     for (int x = 1; x < width - 1; x++) {
         tb_printf(x, 3, TB_HI_BLACK, 0, "─");
     }
 
+    int vcol = is_compact ? 28 : 41;
+    int max_vlen = width - vcol - 2;
+    if (max_vlen < 6) max_vlen = 6;
+
     // Section 1: DAEMON & HEALTH MONITOR
-    tb_printf(2, 4, TB_WHITE | TB_BOLD, 0, "DAEMON & HEALTH MONITOR");
+    tb_printf(2, 4, TB_WHITE | TB_BOLD, 0, is_compact ? "DAEMON & WATCHDOG" : "DAEMON & HEALTH MONITOR");
 
     tb_printf(2, 5, (cur == 0) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 0) ? "▶" : " ");
     tb_printf(4, 5, TB_GREEN | TB_BOLD, 0, "(1)");
-    tb_printf(7, 5, TB_WHITE, 0, " Keepalive Watchdog Check       : ");
-    if (cfg->keepalive) tb_printf(41, 5, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(41, 5, TB_HI_BLACK, 0, "Disabled");
+    tb_printf(7, 5, TB_WHITE, 0, is_compact ? " Watchdog Check      : " : " Keepalive Watchdog Check       : ");
+    if (cfg->keepalive) tb_printf(vcol, 5, TB_GREEN | TB_BOLD, 0, "Enabled");
+    else tb_printf(vcol, 5, TB_HI_BLACK, 0, "Disabled");
 
     tb_printf(2, 6, (cur == 1) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 1) ? "▶" : " ");
     tb_printf(4, 6, TB_GREEN | TB_BOLD, 0, "(2)");
-    tb_printf(7, 6, TB_WHITE, 0, " Keep Settings Persistent       : ");
-    if (cfg->persistentsettings) tb_printf(41, 6, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(41, 6, TB_HI_BLACK, 0, "Disabled");
+    tb_printf(7, 6, TB_WHITE, 0, is_compact ? " Persistent Settings : " : " Keep Settings Persistent       : ");
+    if (cfg->persistentsettings) tb_printf(vcol, 6, TB_GREEN | TB_BOLD, 0, "Enabled");
+    else tb_printf(vcol, 6, TB_HI_BLACK, 0, "Disabled");
 
     tb_printf(2, 7, (cur == 2) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 2) ? "▶" : " ");
     tb_printf(4, 7, TB_GREEN | TB_BOLD, 0, "(3)");
-    tb_printf(7, 7, TB_WHITE, 0, " Autostart on Router Boot       : ");
-    if (cfg->autostart) tb_printf(41, 7, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(41, 7, TB_HI_BLACK, 0, "Disabled");
+    tb_printf(7, 7, TB_WHITE, 0, is_compact ? " Autostart on Boot   : " : " Autostart on Router Boot       : ");
+    if (cfg->autostart) tb_printf(vcol, 7, TB_GREEN | TB_BOLD, 0, "Enabled");
+    else tb_printf(vcol, 7, TB_HI_BLACK, 0, "Disabled");
 
     // Section 2: TAILSCALE ROUTING & SERVICE
-    tb_printf(2, 9, TB_WHITE | TB_BOLD, 0, "TAILSCALE ROUTING & OPERATING MODE");
+    tb_printf(2, 9, TB_WHITE | TB_BOLD, 0, is_compact ? "ROUTING & OPERATING MODE" : "TAILSCALE ROUTING & OPERATING MODE");
 
     tb_printf(2, 10, (cur == 3) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 3) ? "▶" : " ");
     tb_printf(4, 10, TB_GREEN | TB_BOLD, 0, "(4)");
-    tb_printf(7, 10, TB_WHITE, 0, " Tailscale Operating Mode       : ");
+    tb_printf(7, 10, TB_WHITE, 0, is_compact ? " Operating Mode      : " : " Tailscale Operating Mode       : ");
     if (strcasecmp(cfg->opmode, "Custom") == 0) {
         if (strlen(cfg->customparams) > 0) {
-            tb_printf(41, 10, TB_MAGENTA | TB_BOLD, 0, "Custom (%s)", cfg->customparams);
+            tb_printf(vcol, 10, TB_MAGENTA | TB_BOLD, 0, "Custom (%.*s)", max_vlen - 9 > 4 ? max_vlen - 9 : 4, cfg->customparams);
         } else {
-            tb_printf(41, 10, TB_MAGENTA | TB_BOLD, 0, "Custom Mode");
+            tb_printf(vcol, 10, TB_MAGENTA | TB_BOLD, 0, "Custom Mode");
         }
     } else if (strcasecmp(cfg->opmode, "Kernel") == 0) {
-        tb_printf(41, 10, TB_CYAN | TB_BOLD, 0, "Kernel (TUN) Mode");
+        tb_printf(vcol, 10, TB_CYAN | TB_BOLD, 0, is_compact ? "Kernel Mode" : "Kernel (TUN) Mode");
     } else {
-        tb_printf(41, 10, TB_CYAN | TB_BOLD, 0, "Userspace Mode");
+        tb_printf(vcol, 10, TB_CYAN | TB_BOLD, 0, "Userspace Mode");
     }
 
     tb_printf(2, 11, (cur == 4) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 4) ? "▶" : " ");
     tb_printf(4, 11, TB_GREEN | TB_BOLD, 0, "(5)");
-    tb_printf(7, 11, TB_WHITE, 0, " Advertise as Exit Node         : ");
-    if (cfg->exitnode) tb_printf(41, 11, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(41, 11, TB_HI_BLACK, 0, "Disabled");
+    tb_printf(7, 11, TB_WHITE, 0, is_compact ? " Exit Node Mode      : " : " Advertise as Exit Node         : ");
+    if (cfg->exitnode) tb_printf(vcol, 11, TB_GREEN | TB_BOLD, 0, "Enabled");
+    else tb_printf(vcol, 11, TB_HI_BLACK, 0, "Disabled");
 
     tb_printf(2, 12, (cur == 5) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 5) ? "▶" : " ");
     tb_printf(4, 12, TB_GREEN | TB_BOLD, 0, "(6)");
-    tb_printf(7, 12, TB_WHITE, 0, " Advertise Subnet Routes        : ");
+    tb_printf(7, 12, TB_WHITE, 0, is_compact ? " Subnet Routing      : " : " Advertise Subnet Routes        : ");
     if (cfg->advroutes) {
-        if (strlen(cfg->routes) > 0) tb_printf(41, 12, TB_GREEN | TB_BOLD, 0, "Enabled (%s)", cfg->routes);
-        else tb_printf(41, 12, TB_GREEN | TB_BOLD, 0, "Enabled");
+        if (strlen(cfg->routes) > 0) tb_printf(vcol, 12, TB_GREEN | TB_BOLD, 0, "Enabled (%.*s)", max_vlen - 10 > 4 ? max_vlen - 10 : 4, cfg->routes);
+        else tb_printf(vcol, 12, TB_GREEN | TB_BOLD, 0, "Enabled");
     } else {
-        tb_printf(41, 12, TB_HI_BLACK, 0, "Disabled");
+        tb_printf(vcol, 12, TB_HI_BLACK, 0, "Disabled");
     }
 
     tb_printf(2, 13, (cur == 6) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 6) ? "▶" : " ");
     tb_printf(4, 13, TB_GREEN | TB_BOLD, 0, "(7)");
-    tb_printf(7, 13, TB_WHITE, 0, " Edit Subnet Route CIDR         : ");
-    if (strlen(cfg->routes) > 0) tb_printf(41, 13, TB_YELLOW | TB_BOLD, 0, "%s", cfg->routes);
-    else tb_printf(41, 13, TB_HI_BLACK, 0, "None");
+    tb_printf(7, 13, TB_WHITE, 0, is_compact ? " Edit Subnet CIDR    : " : " Edit Subnet Route CIDR         : ");
+    if (strlen(cfg->routes) > 0) tb_printf(vcol, 13, TB_YELLOW | TB_BOLD, 0, "%.*s", max_vlen, cfg->routes);
+    else tb_printf(vcol, 13, TB_HI_BLACK, 0, "None");
 
     // Section 3: INTERFACE & LOGGING
     tb_printf(2, 15, TB_WHITE | TB_BOLD, 0, "INTERFACE & LOGGING");
 
     tb_printf(2, 16, (cur == 7) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 7) ? "▶" : " ");
     tb_printf(4, 16, TB_GREEN | TB_BOLD, 0, "(8)");
-    tb_printf(7, 16, TB_WHITE, 0, " Status Check Interval          : ");
-    tb_printf(41, 16, TB_CYAN | TB_BOLD, 0, "%ds", cfg->timerloop);
+    tb_printf(7, 16, TB_WHITE, 0, is_compact ? " Status Interval     : " : " Status Check Interval          : ");
+    tb_printf(vcol, 16, TB_CYAN | TB_BOLD, 0, "%ds", cfg->timerloop);
 
     tb_printf(2, 17, (cur == 8) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 8) ? "▶" : " ");
     tb_printf(4, 17, TB_GREEN | TB_BOLD, 0, "(9)");
-    tb_printf(7, 17, TB_WHITE, 0, " Event Log Retention Max        : ");
-    if (cfg->logsize == 0) tb_printf(41, 17, TB_HI_BLACK, 0, "Disabled");
-    else tb_printf(41, 17, TB_CYAN | TB_BOLD, 0, "%d rows", cfg->logsize);
+    tb_printf(7, 17, TB_WHITE, 0, is_compact ? " Log Retention       : " : " Event Log Retention Max        : ");
+    if (cfg->logsize == 0) tb_printf(vcol, 17, TB_HI_BLACK, 0, "Disabled");
+    else tb_printf(vcol, 17, TB_CYAN | TB_BOLD, 0, "%d rows", cfg->logsize);
 
     // Section 4: NOTIFICATIONS & AUTOMATION
     tb_printf(2, 19, TB_WHITE | TB_BOLD, 0, "NOTIFICATIONS & AUTOMATION");
 
     tb_printf(2, 20, (cur == 9) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 9) ? "▶" : " ");
     tb_printf(4, 20, TB_GREEN | TB_BOLD, 0, "(10)");
-    tb_printf(8, 20, TB_WHITE, 0, " AMTM Email Notifications     : ");
-    if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(41, 20, TB_HI_BLACK, 0, "Disabled");
-    else if (!cfg->amtmemailsuccess && cfg->amtmemailfailure) tb_printf(41, 20, TB_GREEN | TB_BOLD, 0, "Failures only (RL: %d/h)", cfg->ratelimit);
-    else if (cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(41, 20, TB_GREEN | TB_BOLD, 0, "Success only (RL: %d/h)", cfg->ratelimit);
-    else tb_printf(41, 20, TB_GREEN | TB_BOLD, 0, "Success & Failures (RL: %d/h)", cfg->ratelimit);
+    tb_printf(is_compact ? 7 : 8, 20, TB_WHITE, 0, is_compact ? " AMTM Email Alerts   : " : " AMTM Email Notifications     : ");
+    if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, 20, TB_HI_BLACK, 0, "Disabled");
+    else if (!cfg->amtmemailsuccess && cfg->amtmemailfailure) tb_printf(vcol, 20, TB_GREEN | TB_BOLD, 0, "Failures (RL: %d/h)", cfg->ratelimit);
+    else if (cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, 20, TB_GREEN | TB_BOLD, 0, "Success (RL: %d/h)", cfg->ratelimit);
+    else tb_printf(vcol, 20, TB_GREEN | TB_BOLD, 0, is_compact ? "All (RL: %d/h)" : "Success & Failures (RL: %d/h)", cfg->ratelimit);
 
     tb_printf(2, 21, (cur == 10) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 10) ? "▶" : " ");
     tb_printf(4, 21, TB_GREEN | TB_BOLD, 0, "(11)");
-    tb_printf(8, 21, TB_WHITE, 0, " Scheduled Autoupdate Track   : ");
-    if (cfg->schedule) tb_printf(41, 21, TB_GREEN | TB_BOLD, 0, "Enabled @ %02d:%02d (%s)", cfg->schedulehrs, cfg->schedulemin, cfg->track ? "Beta" : "Stable");
-    else tb_printf(41, 21, TB_HI_BLACK, 0, "Disabled");
+    tb_printf(is_compact ? 7 : 8, 21, TB_WHITE, 0, is_compact ? " Scheduled Autoupdate: " : " Scheduled Autoupdate Track   : ");
+    if (cfg->schedule) tb_printf(vcol, 21, TB_GREEN | TB_BOLD, 0, is_compact ? "@%02d:%02d (%s)" : "Enabled @ %02d:%02d (%s)", cfg->schedulehrs, cfg->schedulemin, cfg->track ? "Beta" : "Stable");
+    else tb_printf(vcol, 21, TB_HI_BLACK, 0, "Disabled");
 
     // Section 5: BINARY, MAINTENANCE & INSTALLATION
-    tb_printf(2, 23, TB_WHITE | TB_BOLD, 0, "BINARY MAINTENANCE & INSTALLATION");
+    tb_printf(2, 23, TB_WHITE | TB_BOLD, 0, is_compact ? "MAINTENANCE & UPDATES" : "BINARY MAINTENANCE & INSTALLATION");
 
     tb_printf(2, 24, (cur == 11) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 11) ? "▶" : " ");
     tb_printf(4, 24, TB_GREEN | TB_BOLD, 0, "(12)");
-    tb_printf(8, 24, TB_WHITE, 0, " Update Tailscale Binary      : ");
-    tb_printf(41, 24, TB_WHITE, 0, "Check & Update to Latest (v%s)", cfg->tsver);
+    tb_printf(is_compact ? 7 : 8, 24, TB_WHITE, 0, is_compact ? " Update TS Binary    : " : " Update Tailscale Binary      : ");
+    tb_printf(vcol, 24, TB_WHITE, 0, is_compact ? "Latest (v%s)" : "Check & Update to Latest (v%s)", cfg->tsver);
 
     tb_printf(2, 25, (cur == 12) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 12) ? "▶" : " ");
     tb_printf(4, 25, TB_GREEN | TB_BOLD, 0, "(13)");
-    tb_printf(8, 25, TB_WHITE, 0, " Reset Daemon State / Re-login: ");
-    tb_printf(41, 25, TB_YELLOW | TB_BOLD, 0, "Clear State & Re-authenticate");
+    tb_printf(is_compact ? 7 : 8, 25, TB_WHITE, 0, is_compact ? " Reset State/Relogin : " : " Reset Daemon State / Re-login: ");
+    tb_printf(vcol, 25, TB_YELLOW | TB_BOLD, 0, is_compact ? "Clear & Reauth" : "Clear State & Re-authenticate");
 
     tb_printf(2, 26, (cur == 13) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 13) ? "▶" : " ");
     tb_printf(4, 26, TB_GREEN | TB_BOLD, 0, "(14)");
-    tb_printf(8, 26, TB_WHITE, 0, " Reinstall Entware Tailscale  : ");
-    tb_printf(41, 26, TB_CYAN | TB_BOLD, 0, "Run Entware Installer");
+    tb_printf(is_compact ? 7 : 8, 26, TB_WHITE, 0, is_compact ? " Reinstall Entware   : " : " Reinstall Entware Tailscale  : ");
+    tb_printf(vcol, 26, TB_CYAN | TB_BOLD, 0, is_compact ? "Run Installer" : "Run Entware Installer");
 
     tb_printf(2, 27, (cur == 14) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 14) ? "▶" : " ");
     tb_printf(4, 27, TB_GREEN | TB_BOLD, 0, "(15)");
-    tb_printf(8, 27, TB_WHITE, 0, " Uninstall ZeroScale          : ");
-    tb_printf(41, 27, TB_RED | TB_BOLD, 0, "Complete Removal & Cleanup");
+    tb_printf(is_compact ? 7 : 8, 27, TB_WHITE, 0, is_compact ? " Uninstall ZeroScale : " : " Uninstall ZeroScale          : ");
+    tb_printf(vcol, 27, TB_RED | TB_BOLD, 0, is_compact ? "Remove All" : "Complete Removal & Cleanup");
 
     for (int x = 1; x < width - 1; x++) {
         tb_printf(x, height - 3, TB_HI_BLACK, 0, "─");
@@ -507,7 +601,11 @@ static void draw_unified_config_view(void) {
         tb_printf(2, height - 4, TB_YELLOW | TB_BOLD, 0, "⚡ %s", g_app.toast_msg);
     }
 
-    tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓: Navigate | Enter: Toggle/Edit | Click row or press number | Esc/q: Back to Monitor ]");
+    if (is_compact) {
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓: Nav | Enter: Edit | 1-15: Select | Esc: Back ]");
+    } else {
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓: Navigate | Enter: Toggle/Edit | Click row or press number | Esc/q: Back to Monitor ]");
+    }
 }
 
 static void draw_peer_detail_modal(void) {
@@ -524,8 +622,8 @@ static void draw_peer_detail_modal(void) {
     int peer_idx = g_app.filtered_indices[g_app.selected_peer];
     PeerInfo *p = &g_app.peers[peer_idx];
 
-    int box_w = (width >= 86) ? 80 : (width - 4);
-    if (box_w < 60) box_w = 60;
+    int box_w = (width >= 86) ? 76 : (width - 4);
+    if (box_w < 38) box_w = width - 2;
     int box_h = 13;
     int start_x = (width - box_w) / 2;
     int start_y = (height - box_h) / 2;
@@ -539,23 +637,38 @@ static void draw_peer_detail_modal(void) {
     draw_modal_row(start_x, start_y + 6, box_w, "Connection", p->relay_info, p->is_direct ? (TB_GREEN | TB_BOLD) : TB_YELLOW, TB_HI_BLACK);
     draw_modal_row(start_x, start_y + 7, box_w, "Tailnet Status", p->status, p->is_online ? (TB_GREEN | TB_BOLD) : TB_HI_BLACK, TB_HI_BLACK);
 
-    tb_printf(start_x + 3, start_y + 9, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
+    if (box_w < 50) {
+        tb_printf(start_x + 3, start_y + 9, TB_WHITE | TB_DIM, TB_HI_BLACK, "Tab: Select | Enter: Run");
+    } else {
+        tb_printf(start_x + 3, start_y + 9, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
+    }
 
     for (int x = start_x + 1; x < start_x + box_w - 1; x++) {
         tb_printf(x, start_y + 10, TB_WHITE, TB_HI_BLACK, "─");
     }
 
-    draw_modal_btn(start_x + 3, start_y + 11, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
-    draw_modal_btn(start_x + 13, start_y + 11, "Tailscale Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
-    draw_modal_btn(start_x + 34, start_y + 11, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
+    if (box_w >= 54) {
+        draw_modal_btn(start_x + 3, start_y + 11, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
+        draw_modal_btn(start_x + 13, start_y + 11, "Tailscale Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
+        draw_modal_btn(start_x + 34, start_y + 11, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
+    } else {
+        draw_modal_btn(start_x + 2, start_y + 11, "Ping", (g_app.peer_detail_selected_btn == 0), 1, 0);
+        draw_modal_btn(start_x + 11, start_y + 11, "TS Ping", (g_app.peer_detail_selected_btn == 1), 1, 0);
+        draw_modal_btn(start_x + 23, start_y + 11, "Close", (g_app.peer_detail_selected_btn == 2), 0, 0);
+    }
     tb_set_cell(start_x + box_w - 1, start_y + 11, 0x2502 /* │ */, TB_CYAN | TB_BOLD, TB_HI_BLACK);
 }
 
 static void draw_logs_view(void) {
     int width = tb_width();
     int height = tb_height();
+    int is_compact = (width < 80);
 
-    tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale Event Log Viewer (Total: %d lines)", g_app.log_count);
+    if (is_compact) {
+        tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale Logs (%d lines)", g_app.log_count);
+    } else {
+        tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale Event Log Viewer (Total: %d lines)", g_app.log_count);
+    }
 
     for (int x = 1; x < width - 1; x++) {
         tb_printf(x, 2, TB_HI_BLACK, 0, "─");
@@ -579,12 +692,18 @@ static void draw_logs_view(void) {
         tb_printf(2, start_y + i, fg, 0, "%.*s", width - 4, line);
     }
 
-    tb_printf(2, height - 2, TB_WHITE, 0, "Line %d-%d of %d  [↑/↓: Scroll | g/G: Top/Bottom | r: Refresh | Esc/q: Back]", 
-              g_app.log_scroll + 1, 
-              (g_app.log_scroll + max_rows > g_app.log_count ? g_app.log_count : g_app.log_scroll + max_rows),
-              g_app.log_count);
+    if (is_compact) {
+        tb_printf(2, height - 2, TB_WHITE, 0, "L%d-%d/%d [↑/↓: Scroll | r: Refresh | Esc: Back]", 
+                  g_app.log_scroll + 1, 
+                  (g_app.log_scroll + max_rows > g_app.log_count ? g_app.log_count : g_app.log_scroll + max_rows),
+                  g_app.log_count);
+    } else {
+        tb_printf(2, height - 2, TB_WHITE, 0, "Line %d-%d of %d  [↑/↓: Scroll | g/G: Top/Bottom | r: Refresh | Esc/q: Back]", 
+                  g_app.log_scroll + 1, 
+                  (g_app.log_scroll + max_rows > g_app.log_count ? g_app.log_count : g_app.log_scroll + max_rows),
+                  g_app.log_count);
+    }
 }
-
 
 static void draw_input_modal(void) {
     if (g_app.prev_mode == VIEW_CONFIG || g_app.mode == VIEW_INPUT) {
@@ -596,28 +715,30 @@ static void draw_input_modal(void) {
     int width = tb_width();
     int height = tb_height();
 
-    int box_w = (width >= 82) ? 78 : (width - 4);
-    if (box_w < 50) box_w = 50;
+    int box_w = (width >= 82) ? 76 : (width - 4);
+    if (box_w < 38) box_w = width - 2;
     int box_h = 9;
     int start_x = (width - box_w) / 2;
     int start_y = (height - box_h) / 2;
 
     draw_modal_box(start_x, start_y, box_w, box_h, g_app.input_title, TB_YELLOW | TB_BOLD, TB_HI_BLACK);
 
-    tb_printf(start_x + 3, start_y + 2, TB_WHITE | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 8, g_app.input_prompt);
-    tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ to move cursor, Enter to save, Tab for buttons.");
+    tb_printf(start_x + 3, start_y + 2, TB_WHITE | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 6, g_app.input_prompt);
+    if (box_w < 50) {
+        tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Enter: Save | Esc: Cancel");
+    } else {
+        tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ to move cursor, Enter to save, Tab for buttons.");
+    }
 
     int text_focused = (g_app.input_selected_btn == 0);
     int input_field_y = start_y + 5;
-    int max_input_display = box_w - 8;
+    int max_input_display = box_w - 6;
     int buf_len = (int)strlen(g_app.input_buf);
 
-    // Clear input field line inside modal
     for (int x = 0; x < max_input_display; x++) {
         tb_set_cell(start_x + 3 + x, input_field_y, ' ', TB_WHITE, TB_HI_BLACK);
     }
 
-    // Render characters with visible block cursor at input_cursor position
     for (int i = 0; i < buf_len && i < max_input_display; i++) {
         char ch = g_app.input_buf[i];
         if (text_focused && i == g_app.input_cursor) {
@@ -626,13 +747,12 @@ static void draw_input_modal(void) {
             tb_set_cell(start_x + 3 + i, input_field_y, ch, TB_CYAN | TB_BOLD, TB_HI_BLACK);
         }
     }
-    // If cursor is at the end of the text
     if (text_focused && g_app.input_cursor == buf_len && buf_len < max_input_display) {
         tb_set_cell(start_x + 3 + buf_len, input_field_y, ' ', TB_BLACK, TB_CYAN | TB_BOLD);
     }
 
-    draw_modal_btn(start_x + 4, start_y + 7, "Save", (g_app.input_selected_btn == 1), 1, 0);
-    draw_modal_btn(start_x + 14, start_y + 7, "Cancel", (g_app.input_selected_btn == 2), 0, 0);
+    draw_modal_btn(start_x + 3, start_y + 7, "Save", (g_app.input_selected_btn == 1), 1, 0);
+    draw_modal_btn(start_x + 13, start_y + 7, "Cancel", (g_app.input_selected_btn == 2), 0, 0);
     tb_set_cell(start_x + box_w - 1, start_y + 7, 0x2502 /* │ */, TB_YELLOW | TB_BOLD, TB_HI_BLACK);
 }
 
@@ -646,7 +766,8 @@ static void draw_confirm_dialog(void) {
     int width = tb_width();
     int height = tb_height();
 
-    int box_w = (width >= 70) ? 66 : (width - 4);
+    int box_w = (width >= 70) ? 62 : (width - 4);
+    if (box_w < 38) box_w = width - 2;
     int box_h = 8;
     int start_x = (width - box_w) / 2;
     int start_y = (height - box_h) / 2;
@@ -656,12 +777,15 @@ static void draw_confirm_dialog(void) {
 
     draw_modal_box(start_x, start_y, box_w, box_h, "CONFIRMATION REQUIRED", is_destructive ? (TB_RED | TB_BOLD) : (TB_YELLOW | TB_BOLD), TB_HI_BLACK);
 
-    tb_printf(start_x + 3, start_y + 2, TB_WHITE | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 8, g_app.confirm_prompt);
-    tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
+    tb_printf(start_x + 3, start_y + 2, TB_WHITE | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 6, g_app.confirm_prompt);
+    if (box_w < 50) {
+        tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Tab: Select | Enter: Run");
+    } else {
+        tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
+    }
 
-    // Action button & Cancel button
     int act_len = (int)strlen(action_lbl) + 2;
-    int btn0_x = start_x + 4;
+    int btn0_x = start_x + 3;
     int btn1_x = btn0_x + act_len + 3;
 
     draw_modal_btn(btn0_x, start_y + 5, action_lbl, (g_app.confirm_selected_btn == 0), 1, is_destructive);

@@ -371,37 +371,67 @@ static void handle_dashboard_mouse(struct tb_event *ev) {
         int is_wide = (width >= 96);
         // Row 5 Action Bar Click
         if (ev->y == 5) {
-            int x0 = 1;
-            int b0 = x0 + 9;
-            int b1 = b0 + 5;
-            int div1 = b1 + 7;
-            int ts_lbl = div1 + 2 + (is_wide ? 11 : 4);
-            int b2 = ts_lbl;
-            int b3 = b2 + 10;
-            int b4 = b3 + 8;
-            int div2 = b4 + 7;
-            int b5 = div2 + 2;
-            int div3 = b5 + 7;
-            int b6 = div3 + 2;
-            int div4 = b6 + (is_wide ? 16 : 9);
-            int b7 = div4 + 2;
+            if (width < 80) {
+                int x0 = 1;
+                int b0 = x0;
+                int b1 = x0 + 5;
+                int b2 = x0 + 14;
+                int b3 = x0 + 21;
+                int b4 = x0 + 29;
+                int b5 = x0 + 38;
+                int b6 = x0 + 46;
+                int b7 = x0 + 54;
 
-            if (ev->x >= b0 && ev->x < b0 + 4) {
-                trigger_header_action(0);
-            } else if (ev->x >= b1 && ev->x < b1 + 6) {
-                trigger_header_action(1);
-            } else if (ev->x >= b2 && ev->x < b2 + 9) {
-                trigger_header_action(2);
-            } else if (ev->x >= b3 && ev->x < b3 + 7) {
-                trigger_header_action(3);
-            } else if (ev->x >= b4 && ev->x < b4 + 6) {
-                trigger_header_action(4);
-            } else if (ev->x >= b5 && ev->x < b5 + 6) {
-                trigger_header_action(5);
-            } else if (ev->x >= b6 && ev->x < b6 + (is_wide ? 15 : 8)) {
-                trigger_header_action(6);
-            } else if (ev->x >= b7 && ev->x < b7 + 6) {
-                trigger_header_action(7);
+                if (ev->x >= b0 && ev->x < b0 + 4) {
+                    trigger_header_action(0);
+                } else if (ev->x >= b1 && ev->x < b1 + 6) {
+                    trigger_header_action(1);
+                } else if (ev->x >= b2 && ev->x < b2 + 6) {
+                    trigger_header_action(2);
+                } else if (ev->x >= b3 && ev->x < b3 + 7) {
+                    trigger_header_action(3);
+                } else if (ev->x >= b4 && ev->x < b4 + 6) {
+                    trigger_header_action(4);
+                } else if (ev->x >= b5 && ev->x < b5 + 5) {
+                    trigger_header_action(5);
+                } else if (ev->x >= b6 && ev->x < b6 + 5) {
+                    trigger_header_action(6);
+                } else if (ev->x >= b7 && ev->x < b7 + 6) {
+                    trigger_header_action(7);
+                }
+            } else {
+                int x0 = 1;
+                int b0 = x0 + 9;
+                int b1 = b0 + 5;
+                int div1 = b1 + 7;
+                int ts_lbl = div1 + 2 + (is_wide ? 11 : 4);
+                int b2 = ts_lbl;
+                int b3 = b2 + 10;
+                int b4 = b3 + 8;
+                int div2 = b4 + 7;
+                int b5 = div2 + 2;
+                int div3 = b5 + 7;
+                int b6 = div3 + 2;
+                int div4 = b6 + (is_wide ? 16 : 9);
+                int b7 = div4 + 2;
+
+                if (ev->x >= b0 && ev->x < b0 + 4) {
+                    trigger_header_action(0);
+                } else if (ev->x >= b1 && ev->x < b1 + 6) {
+                    trigger_header_action(1);
+                } else if (ev->x >= b2 && ev->x < b2 + 9) {
+                    trigger_header_action(2);
+                } else if (ev->x >= b3 && ev->x < b3 + 7) {
+                    trigger_header_action(3);
+                } else if (ev->x >= b4 && ev->x < b4 + 6) {
+                    trigger_header_action(4);
+                } else if (ev->x >= b5 && ev->x < b5 + 6) {
+                    trigger_header_action(5);
+                } else if (ev->x >= b6 && ev->x < b6 + (is_wide ? 15 : 8)) {
+                    trigger_header_action(6);
+                } else if (ev->x >= b7 && ev->x < b7 + 6) {
+                    trigger_header_action(7);
+                }
             }
         } else if (ev->y >= 10 && ev->y < 10 + g_app.filtered_count) {
             int clicked_idx = (ev->y - 10) + g_app.peer_scroll;
@@ -619,22 +649,35 @@ static void handle_peer_detail_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
         int width = tb_width();
         int height = tb_height();
-        int box_w = (width >= 86) ? 80 : (width - 4);
-        if (box_w < 60) box_w = 60;
+        int box_w = (width >= 86) ? 76 : (width - 4);
+        if (box_w < 38) box_w = width - 2;
         int box_h = 13;
         int start_x = (width - box_w) / 2;
         int start_y = (height - box_h) / 2;
 
         if (ev->y == start_y + 11) {
-            if (ev->x >= start_x + 3 && ev->x < start_x + 11) {
-                g_app.peer_detail_selected_btn = 0;
-                do_peer_ping();
-            } else if (ev->x >= start_x + 13 && ev->x < start_x + 32) {
-                g_app.peer_detail_selected_btn = 1;
-                do_peer_ts_ping();
-            } else if (ev->x >= start_x + 34 && ev->x < start_x + 43) {
-                g_app.peer_detail_selected_btn = 2;
-                g_app.mode = VIEW_DASHBOARD;
+            if (box_w >= 54) {
+                if (ev->x >= start_x + 3 && ev->x < start_x + 11) {
+                    g_app.peer_detail_selected_btn = 0;
+                    do_peer_ping();
+                } else if (ev->x >= start_x + 13 && ev->x < start_x + 32) {
+                    g_app.peer_detail_selected_btn = 1;
+                    do_peer_ts_ping();
+                } else if (ev->x >= start_x + 34 && ev->x < start_x + 43) {
+                    g_app.peer_detail_selected_btn = 2;
+                    g_app.mode = VIEW_DASHBOARD;
+                }
+            } else {
+                if (ev->x >= start_x + 2 && ev->x < start_x + 9) {
+                    g_app.peer_detail_selected_btn = 0;
+                    do_peer_ping();
+                } else if (ev->x >= start_x + 11 && ev->x < start_x + 21) {
+                    g_app.peer_detail_selected_btn = 1;
+                    do_peer_ts_ping();
+                } else if (ev->x >= start_x + 23 && ev->x < start_x + 32) {
+                    g_app.peer_detail_selected_btn = 2;
+                    g_app.mode = VIEW_DASHBOARD;
+                }
             }
         } else if (ev->x < start_x || ev->x >= start_x + box_w || ev->y < start_y || ev->y >= start_y + box_h) {
             g_app.mode = VIEW_DASHBOARD;
@@ -791,8 +834,8 @@ static void handle_input_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
         int width = tb_width();
         int height = tb_height();
-        int box_w = (width >= 82) ? 78 : (width - 4);
-        if (box_w < 50) box_w = 50;
+        int box_w = (width >= 82) ? 76 : (width - 4);
+        if (box_w < 38) box_w = width - 2;
         int box_h = 9;
         int start_x = (width - box_w) / 2;
         int start_y = (height - box_h) / 2;
@@ -805,10 +848,10 @@ static void handle_input_mouse(struct tb_event *ev) {
             if (clicked_pos > len) clicked_pos = len;
             g_app.input_cursor = clicked_pos;
         } else if (ev->y == start_y + 7) {
-            if (ev->x >= start_x + 4 && ev->x < start_x + 12) {
+            if (ev->x >= start_x + 3 && ev->x < start_x + 11) {
                 g_app.input_selected_btn = 1;
                 save_input_action();
-            } else if (ev->x >= start_x + 14 && ev->x < start_x + 22) {
+            } else if (ev->x >= start_x + 13 && ev->x < start_x + 23) {
                 g_app.input_selected_btn = 2;
                 cancel_input_action();
             }
@@ -853,16 +896,22 @@ static void handle_confirm_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
         int width = tb_width();
         int height = tb_height();
-        int box_w = (width >= 70) ? 66 : (width - 4);
-        int box_h = 7;
+        int box_w = (width >= 70) ? 62 : (width - 4);
+        if (box_w < 38) box_w = width - 2;
+        int box_h = 8;
         int start_x = (width - box_w) / 2;
         int start_y = (height - box_h) / 2;
 
+        const char *action_lbl = (strlen(g_app.confirm_action_label) > 0) ? g_app.confirm_action_label : "Confirm";
+        int act_len = (int)strlen(action_lbl) + 2;
+        int btn0_x = start_x + 3;
+        int btn1_x = btn0_x + act_len + 3;
+
         if (ev->y == start_y + 5) {
-            if (ev->x >= start_x + 4 && ev->x < start_x + 16) {
+            if (ev->x >= btn0_x && ev->x < btn0_x + act_len + 2) {
                 g_app.confirm_selected_btn = 0;
                 execute_confirm_action();
-            } else if (ev->x >= start_x + 18 && ev->x < start_x + 30) {
+            } else if (ev->x >= btn1_x && ev->x < btn1_x + 10) {
                 g_app.confirm_selected_btn = 1;
                 cancel_confirm_action();
             }
@@ -919,7 +968,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.3.0\n");
+            printf("ZeroScale v0.3.1\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -m, --mock         Run in local desktop simulation mode with synthetic data\n");
