@@ -126,8 +126,9 @@ void execute_action(const char *action, const char *cmd) {
     show_toast("%s", action);
     log_event("INFO", "%s", action);
     char buf[512];
-    snprintf(buf, sizeof(buf), "%s >/dev/null 2>&1 &", cmd);
+    snprintf(buf, sizeof(buf), "( %s ) >/dev/null 2>&1 &", cmd);
     system(buf);
+    tb_invalidate();
     refresh_tailscale_status();
 }
 
@@ -681,11 +682,12 @@ static void handle_input_mouse(struct tb_event *ev) {
 
 static void execute_confirm_action(void) {
     char buf[512];
-    snprintf(buf, sizeof(buf), "%s >/dev/null 2>&1 &", g_app.confirm_cmd);
+    snprintf(buf, sizeof(buf), "( %s ) >/dev/null 2>&1 &", g_app.confirm_cmd);
     system(buf);
     log_event("INFO", "Executed action: %s (%s)", g_app.confirm_action_label, g_app.confirm_cmd);
     show_toast("Action executed.");
     g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
+    tb_invalidate();
     refresh_tailscale_status();
 }
 
@@ -743,6 +745,11 @@ static void handle_confirm_mouse(struct tb_event *ev) {
 
 void handle_event(struct tb_event *ev) {
     if (ev->type == TB_EVENT_KEY) {
+        if (ev->key == TB_KEY_CTRL_L || ev->key == TB_KEY_CTRL_R) {
+            tb_invalidate();
+            ui_draw();
+            return;
+        }
         switch (g_app.mode) {
             case VIEW_DASHBOARD: handle_dashboard_key(ev); break;
             case VIEW_CONFIG: handle_config_key(ev); break;
