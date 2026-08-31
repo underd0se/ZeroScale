@@ -132,6 +132,7 @@ typedef struct {
     char copy_hint[32];
     char term_name[32];
 
+    int mock_mode;
     int running;
 } AppState;
 
@@ -139,6 +140,7 @@ extern AppState g_app;
 
 // Core Prototypes
 void app_init(void);
+void load_mock_data(void);
 void detect_terminal(void);
 void app_cleanup(void);
 void load_config(void);

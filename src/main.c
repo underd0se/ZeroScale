@@ -84,7 +84,9 @@ static void sanitize_legacy_symlinks(void) {
 }
 
 void app_init(void) {
+    int saved_mock = g_app.mock_mode;
     memset(&g_app, 0, sizeof(g_app));
+    g_app.mock_mode = saved_mock;
     g_app.running = 1;
     g_app.mode = VIEW_DASHBOARD;
     g_app.selected_peer = -1;
@@ -93,24 +95,32 @@ void app_init(void) {
     signal(SIGTERM, handle_sigint);
 
     detect_terminal();
-    sanitize_legacy_symlinks();
+    if (!g_app.mock_mode) {
+        sanitize_legacy_symlinks();
+    }
 
     tb_init();
     tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
 
-    load_config();
+    if (g_app.mock_mode) {
+        load_mock_data();
+    } else {
+        load_config();
+    }
 
     // Centered startup splash sequence
     show_splash("INITIALIZING...", 350, TB_HI_BLACK);
     show_splash("INITIALIZING ... DONE", 300, TB_YELLOW | TB_BOLD);
-    show_splash("STARTING ZEROSCALE", 300, TB_GREEN | TB_BOLD);
+    show_splash(g_app.mock_mode ? "STARTING ZEROSCALE [MOCK]" : "STARTING ZEROSCALE", 300, TB_GREEN | TB_BOLD);
 
-    refresh_tailscale_status();
+    if (!g_app.mock_mode) {
+        refresh_tailscale_status();
+    }
     g_app.countdown = g_app.config.timerloop > 0 ? g_app.config.timerloop : 60;
     g_app.last_tick = time(NULL);
     g_app.last_status_refresh = time(NULL);
 
-    log_event("INFO", "ZeroScale v%s session started.", g_app.config.version);
+    log_event("INFO", "ZeroScale v%s session started%s.", g_app.config.version, g_app.mock_mode ? " (Mock Simulator)" : "");
 }
 
 void app_cleanup(void) {
@@ -144,9 +154,11 @@ void request_input(InputTarget target, const char *title, const char *prompt, co
 void execute_action(const char *action, const char *cmd) {
     show_toast("%s", action);
     log_event("INFO", "%s", action);
-    char buf[512];
-    snprintf(buf, sizeof(buf), "( %s ) >/dev/null 2>&1 &", cmd);
-    system(buf);
+    if (!g_app.mock_mode) {
+        char buf[512];
+        snprintf(buf, sizeof(buf), "( %s ) >/dev/null 2>&1 &", cmd);
+        system(buf);
+    }
     tb_invalidate();
     refresh_tailscale_status();
 }
@@ -469,6 +481,10 @@ static void handle_config_mouse(struct tb_event *ev) {
 
 static void do_peer_ping(void) {
     if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+        if (g_app.mock_mode) {
+            show_toast("[Mock Ping] %s (%s): 11.8 ms", g_app.peers[g_app.selected_peer].name, g_app.peers[g_app.selected_peer].ip);
+            return;
+        }
         char cmd[256];
         snprintf(cmd, sizeof(cmd), "ping -c 3 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
         show_toast("Pinging %s (%s)...", g_app.peers[g_app.selected_peer].name, g_app.peers[g_app.selected_peer].ip);
@@ -480,6 +496,10 @@ static void do_peer_ping(void) {
 
 static void do_peer_ts_ping(void) {
     if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+        if (g_app.mock_mode) {
+            show_toast("[Mock Tailscale Ping] direct to %s: 14.2 ms", g_app.peers[g_app.selected_peer].name);
+            return;
+        }
         char cmd[256];
         snprintf(cmd, sizeof(cmd), "tailscale ping -c 1 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
         show_toast("Testing Tailscale WireGuard latency to %s...", g_app.peers[g_app.selected_peer].name);
@@ -721,9 +741,9 @@ static void cancel_confirm_action(void) {
 }
 
 static void handle_confirm_key(struct tb_event *ev) {
-    char act_char = (strlen(g_app.confirm_action_label) > 0) ? (char)tolower((unsigned char)g_app.confirm_action_label[0]) : 'y';
-
-    if (ev->key == TB_KEY_ARROW_LEFT || ev->key == TB_KEY_ARROW_RIGHT || ev->key == TB_KEY_TAB) {
+    if (ev->key == TB_KEY_ESC || ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
+        cancel_confirm_action();
+    } else if (ev->key == TB_KEY_ARROW_LEFT || ev->key == TB_KEY_ARROW_RIGHT || ev->key == TB_KEY_TAB) {
         g_app.confirm_selected_btn = 1 - g_app.confirm_selected_btn;
     } else if (ev->key == TB_KEY_ENTER || ev->ch == ' ') {
         if (g_app.confirm_selected_btn == 0) {
@@ -731,10 +751,6 @@ static void handle_confirm_key(struct tb_event *ev) {
         } else {
             cancel_confirm_action();
         }
-    } else if (ev->ch == 'y' || ev->ch == 'Y' || ev->ch == act_char || ev->ch == (char)toupper((unsigned char)act_char)) {
-        execute_confirm_action();
-    } else if (ev->ch == 'n' || ev->ch == 'N' || ev->ch == 'c' || ev->ch == 'C' || ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
-        cancel_confirm_action();
     }
 }
 
@@ -743,20 +759,15 @@ static void handle_confirm_mouse(struct tb_event *ev) {
         int width = tb_width();
         int height = tb_height();
         int box_w = (width >= 70) ? 66 : (width - 4);
-        int box_h = 8;
+        int box_h = 7;
         int start_x = (width - box_w) / 2;
         int start_y = (height - box_h) / 2;
 
         if (ev->y == start_y + 5) {
-            const char *action_lbl = (strlen(g_app.confirm_action_label) > 0) ? g_app.confirm_action_label : "Confirm";
-            int act_len = (int)strlen(action_lbl) + 2;
-            int btn0_x = start_x + 4;
-            int btn1_x = btn0_x + act_len + 3;
-
-            if (ev->x >= btn0_x && ev->x < btn0_x + act_len) {
+            if (ev->x >= start_x + 4 && ev->x < start_x + 16) {
                 g_app.confirm_selected_btn = 0;
                 execute_confirm_action();
-            } else if (ev->x >= btn1_x && ev->x < btn1_x + 8) {
+            } else if (ev->x >= start_x + 18 && ev->x < start_x + 30) {
                 g_app.confirm_selected_btn = 1;
                 cancel_confirm_action();
             }
@@ -765,15 +776,21 @@ static void handle_confirm_mouse(struct tb_event *ev) {
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
-// Global Event Dispatcher
+// Global Event Dispatcher & Main Entry Loop
 
 void handle_event(struct tb_event *ev) {
+    if (ev->type == TB_EVENT_RESIZE) {
+        tb_invalidate();
+        return;
+    }
+
     if (ev->type == TB_EVENT_KEY) {
         if (ev->key == TB_KEY_CTRL_L || ev->key == TB_KEY_CTRL_R) {
             tb_invalidate();
-            ui_draw();
+            show_toast("Screen Redrawn");
             return;
         }
+
         switch (g_app.mode) {
             case VIEW_DASHBOARD: handle_dashboard_key(ev); break;
             case VIEW_CONFIG: handle_config_key(ev); break;
@@ -798,16 +815,19 @@ void handle_event(struct tb_event *ev) {
 
 int main(int argc, char *argv[]) {
     if (argc > 1) {
-        if (strcmp(argv[1], "--install") == 0 || strcmp(argv[1], "-i") == 0) {
+        if (strcmp(argv[1], "--mock") == 0 || strcmp(argv[1], "-m") == 0) {
+            g_app.mock_mode = 1;
+        } else if (strcmp(argv[1], "--install") == 0 || strcmp(argv[1], "-i") == 0) {
             install_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--uninstall") == 0 || strcmp(argv[1], "-u") == 0) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.2.4\n");
+            printf("ZeroScale v0.2.3\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
+            printf("  -m, --mock         Run in local desktop simulation mode with synthetic data\n");
             printf("  -i, --install      Install Entware Tailscale and ZeroScale services\n");
             printf("  -u, --uninstall    Uninstall ZeroScale and cleanup crontab/init entries\n");
             printf("  -h, --help         Show this help message\n\n");

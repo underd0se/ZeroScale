@@ -193,7 +193,11 @@ static void draw_dashboard(void) {
     AppConfig *cfg = &g_app.config;
 
     // Top Header Banner
-    tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale v%s ── Live Monitor", cfg->version);
+    if (g_app.mock_mode) {
+        tb_printf(2, 1, TB_MAGENTA | TB_BOLD, 0, "ZeroScale v%s ── Live Monitor [DESKTOP MOCK SIMULATOR]", cfg->version);
+    } else {
+        tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale v%s ── Live Monitor", cfg->version);
+    }
 
     time_t now = time(NULL);
     struct tm *tm_info = localtime(&now);

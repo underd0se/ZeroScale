@@ -1,4 +1,4 @@
-CC ?= gcc
+CC ?= clang
 CFLAGS ?= -O2 -Wall -Wextra -std=c99 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Iinclude
 TARGET = bin/zeroscale
 
@@ -14,7 +14,12 @@ $(TARGET): $(OBJS)
 src/%.o: src/%.c include/termbox2.h src/app.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+sim: $(TARGET)
+	@./$(TARGET) --mock
+
+run: sim
+
 clean:
 	rm -f $(TARGET) src/*.o
 
-.PHONY: all clean
+.PHONY: all clean sim run

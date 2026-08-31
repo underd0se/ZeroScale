@@ -24,11 +24,134 @@ void log_event(const char *level, const char *fmt, ...) {
     vsnprintf(msg, sizeof(msg), fmt, args);
     va_end(args);
 
+    if (g_app.mock_mode) {
+        if (g_app.log_count < MAX_LOG_LINES) {
+            memmove(&g_app.log_lines[1], &g_app.log_lines[0], g_app.log_count * LOG_LINE_LEN);
+            snprintf(g_app.log_lines[0], LOG_LINE_LEN, "%s %s ZEROSCALE[%d] - %s: %s", time_buf, hostname, (int)getpid(), level, msg);
+            g_app.log_count++;
+        }
+        return;
+    }
+
     FILE *f = fopen("/jffs/addons/zeroscale.d/zeroscale.log", "a");
     if (!f) return;
 
     fprintf(f, "%s %s ZEROSCALE[%d] - %s: %s\n", time_buf, hostname, (int)getpid(), level, msg);
     fclose(f);
+}
+
+void load_mock_data(void) {
+    AppConfig *cfg = &g_app.config;
+    snprintf(cfg->version, sizeof(cfg->version), "0.2.3");
+    snprintf(cfg->tsver, sizeof(cfg->tsver), "1.102.2");
+    snprintf(cfg->opmode, sizeof(cfg->opmode), "Kernel");
+    snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
+    cfg->timerloop = 60;
+    cfg->keepalive = 1;
+    cfg->persistentsettings = 1;
+    cfg->exitnode = 1;
+    cfg->advroutes = 1;
+    cfg->autostart = 1;
+    cfg->logsize = 2000;
+    cfg->amtmemailsuccess = 0;
+    cfg->amtmemailfailure = 1;
+    cfg->ratelimit = 5;
+    cfg->schedule = 1;
+    cfg->schedulehrs = 1;
+    cfg->schedulemin = 0;
+    cfg->track = 0;
+    snprintf(cfg->routes, sizeof(cfg->routes), "192.168.50.0/24");
+    cfg->daemon_running = 1;
+    cfg->tailnet_connected = 1;
+
+    // Populate Mock Peers
+    g_app.peer_count = 0;
+
+    // Peer 0: Self (Router)
+    PeerInfo *p0 = &g_app.peers[g_app.peer_count++];
+    memset(p0, 0, sizeof(*p0));
+    snprintf(p0->ip, sizeof(p0->ip), "100.80.50.1");
+    snprintf(p0->name, sizeof(p0->name), "router-gw");
+    snprintf(p0->user, sizeof(p0->user), "baris@");
+    snprintf(p0->os, sizeof(p0->os), "linux");
+    snprintf(p0->status, sizeof(p0->status), "active; offers exit node");
+    snprintf(p0->relay_info, sizeof(p0->relay_info), "Local Router (Self)");
+    p0->is_self = 1;
+    p0->is_exit = 1;
+    p0->is_online = 1;
+
+    // Peer 1: MacBook Pro
+    PeerInfo *p1 = &g_app.peers[g_app.peer_count++];
+    memset(p1, 0, sizeof(*p1));
+    snprintf(p1->ip, sizeof(p1->ip), "100.92.12.4");
+    snprintf(p1->name, sizeof(p1->name), "macbook-pro");
+    snprintf(p1->user, sizeof(p1->user), "baris@");
+    snprintf(p1->os, sizeof(p1->os), "macOS");
+    snprintf(p1->status, sizeof(p1->status), "active; direct 192.168.50.150:41641");
+    snprintf(p1->relay_info, sizeof(p1->relay_info), "Direct Connection");
+    p1->is_online = 1;
+    p1->is_active = 1;
+    p1->is_direct = 1;
+
+    // Peer 2: iPhone 16 Pro
+    PeerInfo *p2 = &g_app.peers[g_app.peer_count++];
+    memset(p2, 0, sizeof(*p2));
+    snprintf(p2->ip, sizeof(p2->ip), "100.104.30.12");
+    snprintf(p2->name, sizeof(p2->name), "iphone-16-pro");
+    snprintf(p2->user, sizeof(p2->user), "baris@");
+    snprintf(p2->os, sizeof(p2->os), "iOS");
+    snprintf(p2->status, sizeof(p2->status), "idle; direct [2a02:8108:...]:41641");
+    snprintf(p2->relay_info, sizeof(p2->relay_info), "Direct Connection (IPv6)");
+    p2->is_online = 1;
+    p2->is_idle = 1;
+    p2->is_direct = 1;
+
+    // Peer 3: Unraid Homelab
+    PeerInfo *p3 = &g_app.peers[g_app.peer_count++];
+    memset(p3, 0, sizeof(*p3));
+    snprintf(p3->ip, sizeof(p3->ip), "100.115.8.99");
+    snprintf(p3->name, sizeof(p3->name), "unraid-homelab");
+    snprintf(p3->user, sizeof(p3->user), "baris@");
+    snprintf(p3->os, sizeof(p3->os), "linux");
+    snprintf(p3->status, sizeof(p3->status), "active; offers exit node; direct 192.168.50.200:41641");
+    snprintf(p3->relay_info, sizeof(p3->relay_info), "Direct Connection (Exit Node)");
+    p3->is_online = 1;
+    p3->is_active = 1;
+    p3->is_exit = 1;
+    p3->is_direct = 1;
+
+    // Peer 4: Work ThinkPad
+    PeerInfo *p4 = &g_app.peers[g_app.peer_count++];
+    memset(p4, 0, sizeof(*p4));
+    snprintf(p4->ip, sizeof(p4->ip), "100.120.44.77");
+    snprintf(p4->name, sizeof(p4->name), "work-thinkpad");
+    snprintf(p4->user, sizeof(p4->user), "baris@");
+    snprintf(p4->os, sizeof(p4->os), "windows");
+    snprintf(p4->status, sizeof(p4->status), "idle; relay \"fra\", tx 45120 rx 89210");
+    snprintf(p4->relay_info, sizeof(p4->relay_info), "DERP Relay (Frankfurt)");
+    p4->is_online = 1;
+    p4->is_idle = 1;
+
+    // Peer 5: Backup Synology NAS
+    PeerInfo *p5 = &g_app.peers[g_app.peer_count++];
+    memset(p5, 0, sizeof(*p5));
+    snprintf(p5->ip, sizeof(p5->ip), "100.64.0.1");
+    snprintf(p5->name, sizeof(p5->name), "backup-nas");
+    snprintf(p5->user, sizeof(p5->user), "baris@");
+    snprintf(p5->os, sizeof(p5->os), "synology");
+    snprintf(p5->status, sizeof(p5->status), "offline");
+    snprintf(p5->relay_info, sizeof(p5->relay_info), "Offline");
+    p5->is_online = 0;
+
+    // Populate Mock Logs
+    g_app.log_count = 0;
+    snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:00:00 RT-AX86U ZEROSCALE[1024] - INFO: ZeroScale service initialized in MOCK simulation mode.");
+    snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:00:02 RT-AX86U ZEROSCALE[1024] - INFO: Tailscale daemon connected to Tailnet (v1.102.2).");
+    snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:00:05 RT-AX86U ZEROSCALE[1024] - INFO: Subnet route 192.168.50.0/24 advertised successfully.");
+    snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:01:00 RT-AX86U ZEROSCALE[1024] - INFO: Watchdog check passed - tailscaled is healthy.");
+    snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:02:15 RT-AX86U ZEROSCALE[1024] - INFO: Peer macbook-pro active via direct WireGuard socket.");
+    snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:03:00 RT-AX86U ZEROSCALE[1024] - INFO: Watchdog check passed - tailscaled is healthy.");
+    snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:04:30 RT-AX86U ZEROSCALE[1024] - INFO: Exit node mode advertised and active.");
 }
 
 static void get_router_lan_subnet(char *dest, size_t maxlen) {
@@ -52,7 +175,7 @@ static void get_router_lan_subnet(char *dest, size_t maxlen) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.2.4");
+    snprintf(cfg->version, sizeof(cfg->version), "0.2.3");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
     cfg->timerloop = 60;
@@ -118,6 +241,10 @@ void load_config(void) {
 }
 
 void save_config(void) {
+    if (g_app.mock_mode) {
+        log_event("INFO", "ZeroScale config updated (Mock Memory).");
+        return;
+    }
     AppConfig *cfg = &g_app.config;
     FILE *f = fopen("/jffs/addons/zeroscale.d/zeroscale.cfg", "w");
     if (!f) return;
@@ -267,6 +394,11 @@ void switch_track(void) {
 }
 
 void refresh_tailscale_status(void) {
+    if (g_app.mock_mode) {
+        g_app.config.daemon_running = 1;
+        g_app.config.tailnet_connected = 1;
+        return;
+    }
     AppConfig *cfg = &g_app.config;
 
     // Check daemon
@@ -339,6 +471,9 @@ void refresh_tailscale_status(void) {
 }
 
 void load_logs(void) {
+    if (g_app.mock_mode) {
+        return;
+    }
     g_app.log_count = 0;
     FILE *f = fopen("/jffs/addons/zeroscale.d/zeroscale.log", "r");
     if (!f) {
