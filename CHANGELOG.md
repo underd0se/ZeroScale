@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.3] - 2026-08-31
+
+### 🛠️ PuTTY Redraw Fixes, Custom Mode Flags Editor & Smart Menu Navigation
+
+ZeroScale `v0.2.3` introduces interactive Custom operating mode management, in-line modal text cursor navigation, smart two-digit numeric menu input buffering, dynamic router LAN subnet detection, and robust subshell stdout isolation preventing screen artifacts in PuTTY and SSH clients.
+
+#### 🌟 Added & Enhanced
+* **Tailscale Custom Operating Mode & Flags Editor:**
+  * Added full `Custom` mode support cycling seamlessly through `Userspace` ➔ `Kernel (TUN)` ➔ `Custom`.
+  * Preserves user-defined flags from legacy Tailmon (`customparams` / `customflags`).
+  * Automatically opens an interactive flag editor modal when entering Custom mode or pressing `(4)` / `Enter` while in Custom mode.
+  * Displays configured custom startup arguments directly on the configuration line.
+* **Modal Text Input Inline Cursor Navigation:**
+  * Full inline cursor navigation with `←` / `→` arrow keys, `Home` / `End`, `Ctrl+A` / `Ctrl+E`.
+  * True character insertion and inline deletion with `Backspace` and `Delete` (`Ctrl+D`).
+  * Quick line clear with `Ctrl+U` / `Ctrl+K`.
+  * Visual block cursor indicating precise caret position within the text box.
+* **Subnet Routes CIDR Prompt Clarity & Dynamic LAN Lookup:**
+  * Updated subnet prompt to explicitly guide multiple comma-separated CIDR entries (`192.168.1.0/24,10.0.0.0/24`).
+  * Added dynamic router LAN subnet lookup via `nvram get lan_ipaddr` to ensure defaults always match the router's active subnet.
+* **Smart Two-Digit Numeric Menu Navigation:**
+  * Buffered number key input in the configuration view: pressing `1` followed by `0`–`5` selects items `(10)` through `(15)` cleanly without triggering single-digit toggles.
+  * Single-digit options `(2)`–`(9)` fire immediately.
+* **PuTTY Screen Redraw & Background Process Isolation:**
+  * Wrapped all compound background maintenance and daemon restart commands inside isolated subshells (`( ... ) >/dev/null 2>&1 &`), preventing package managers like `opkg` from leaking raw output over the terminal screen.
+  * Integrated Termbox buffer invalidation (`tb_invalidate()`) on action executions to force clean hardware repaints.
+  * Added global screen repaint hotkey: press `Ctrl+L` or `Ctrl+R` to force an immediate full-screen redraw anywhere in the app.
+* **Global `e` / `E` Exit Key:**
+  * Added `e` / `E` as a universal exit and cancel key across all menus and modals (matching AMTM standards).
+
+---
+
 ## [0.2.2] - 2026-08-30
 
 ### 🖥️ Dynamic Terminal Detection & Platform-Agnostic Copying
