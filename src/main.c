@@ -247,7 +247,61 @@ static void trigger_header_action(int idx) {
 }
 
 static void handle_dashboard_key(struct tb_event *ev) {
-    if (ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q') {
+    if (g_app.peer_filter_active) {
+        if (ev->key == TB_KEY_ESC) {
+            g_app.peer_filter_active = 0;
+            g_app.peer_filter[0] = '\0';
+            apply_peer_filter_and_sort();
+            show_toast("Search cleared");
+            return;
+        }
+        if (ev->key == TB_KEY_ENTER) {
+            g_app.peer_filter_active = 0;
+            g_app.dash_focus = FOCUS_PEERS;
+            if (g_app.selected_peer < 0 && g_app.filtered_count > 0) g_app.selected_peer = 0;
+            return;
+        }
+        if (ev->key == TB_KEY_BACKSPACE || ev->key == TB_KEY_BACKSPACE2) {
+            size_t len = strlen(g_app.peer_filter);
+            if (len > 0) {
+                g_app.peer_filter[len - 1] = '\0';
+                apply_peer_filter_and_sort();
+            }
+            return;
+        }
+        if (ev->key == TB_KEY_CTRL_U || ev->key == TB_KEY_CTRL_K) {
+            g_app.peer_filter[0] = '\0';
+            apply_peer_filter_and_sort();
+            return;
+        }
+        if (ev->ch >= 32 && ev->ch <= 126) {
+            size_t len = strlen(g_app.peer_filter);
+            if (len < sizeof(g_app.peer_filter) - 2) {
+                g_app.peer_filter[len] = (char)ev->ch;
+                g_app.peer_filter[len + 1] = '\0';
+                apply_peer_filter_and_sort();
+            }
+            return;
+        }
+        return;
+    }
+
+    if (ev->ch == '/' || ev->ch == 'f' || ev->ch == 'F') {
+        g_app.peer_filter_active = 1;
+        return;
+    } else if (ev->ch == 'o' || ev->ch == 'O') {
+        cycle_peer_sort();
+        return;
+    } else if (ev->key == TB_KEY_ESC) {
+        if (strlen(g_app.peer_filter) > 0) {
+            g_app.peer_filter[0] = '\0';
+            apply_peer_filter_and_sort();
+            show_toast("Filter cleared");
+        } else {
+            g_app.running = 0;
+        }
+        return;
+    } else if (ev->ch == 'q' || ev->ch == 'Q') {
         g_app.running = 0;
     } else if (ev->ch == 'u' || ev->ch == 'U') {
         trigger_header_action(0);
@@ -280,9 +334,9 @@ static void handle_dashboard_key(struct tb_event *ev) {
             g_app.header_selected_idx = 0;
         } else if (g_app.dash_focus == FOCUS_HEADER_MENU) {
             g_app.dash_focus = FOCUS_PEERS;
-            if (g_app.selected_peer < 0) g_app.selected_peer = 0;
+            if (g_app.selected_peer < 0 && g_app.filtered_count > 0) g_app.selected_peer = 0;
         } else if (g_app.dash_focus == FOCUS_PEERS) {
-            if (g_app.selected_peer < g_app.peer_count - 1) g_app.selected_peer++;
+            if (g_app.selected_peer < g_app.filtered_count - 1) g_app.selected_peer++;
             int max_rows = tb_height() - 13;
             if (max_rows < 1) max_rows = 1;
             if (g_app.selected_peer >= g_app.peer_scroll + max_rows) g_app.peer_scroll++;
@@ -303,7 +357,7 @@ static void handle_dashboard_key(struct tb_event *ev) {
         if (g_app.dash_focus == FOCUS_HEADER_MENU) {
             trigger_header_action(g_app.header_selected_idx);
         } else if (g_app.dash_focus == FOCUS_PEERS || g_app.selected_peer >= 0) {
-            if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+            if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.filtered_count) {
                 g_app.peer_detail_selected_btn = 0;
                 g_app.mode = VIEW_PEER_DETAIL;
             }
@@ -349,24 +403,25 @@ static void handle_dashboard_mouse(struct tb_event *ev) {
             } else if (ev->x >= b7 && ev->x < b7 + 6) {
                 trigger_header_action(7);
             }
-        } else if (ev->y >= 10 && ev->y < 10 + g_app.peer_count) {
+        } else if (ev->y >= 10 && ev->y < 10 + g_app.filtered_count) {
             int clicked_idx = (ev->y - 10) + g_app.peer_scroll;
-            if (clicked_idx < g_app.peer_count) {
+            if (clicked_idx < g_app.filtered_count) {
                 g_app.dash_focus = FOCUS_PEERS;
                 if (g_app.selected_peer == clicked_idx) {
                     g_app.peer_detail_selected_btn = 0;
                     g_app.mode = VIEW_PEER_DETAIL;
                 } else {
                     g_app.selected_peer = clicked_idx;
+                    int peer_idx = g_app.filtered_indices[clicked_idx];
                     show_toast("Selected: %s (%s) — Press Enter or click again for details", 
-                               g_app.peers[clicked_idx].name, g_app.peers[clicked_idx].ip);
+                               g_app.peers[peer_idx].name, g_app.peers[peer_idx].ip);
                 }
             }
         }
     } else if (ev->key == TB_KEY_MOUSE_WHEEL_UP) {
         if (g_app.peer_scroll > 0) g_app.peer_scroll--;
     } else if (ev->key == TB_KEY_MOUSE_WHEEL_DOWN) {
-        if (g_app.peer_scroll < g_app.peer_count - 5) g_app.peer_scroll++;
+        if (g_app.peer_scroll < g_app.filtered_count - 5) g_app.peer_scroll++;
     }
 }
 
@@ -503,32 +558,36 @@ static void handle_config_mouse(struct tb_event *ev) {
 // View: Peer Detail Modal Handlers
 
 static void do_peer_ping(void) {
-    if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+    if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.filtered_count) {
+        int peer_idx = g_app.filtered_indices[g_app.selected_peer];
+        PeerInfo *p = &g_app.peers[peer_idx];
         if (g_app.mock_mode) {
-            show_toast("[Mock Ping] %s (%s): 11.8 ms", g_app.peers[g_app.selected_peer].name, g_app.peers[g_app.selected_peer].ip);
+            show_toast("[Mock Ping] %s (%s): 11.8 ms", p->name, p->ip);
             return;
         }
         char cmd[256];
-        snprintf(cmd, sizeof(cmd), "ping -c 3 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
-        show_toast("Pinging %s (%s)...", g_app.peers[g_app.selected_peer].name, g_app.peers[g_app.selected_peer].ip);
+        snprintf(cmd, sizeof(cmd), "ping -c 3 %s >/dev/null 2>&1", p->ip);
+        show_toast("Pinging %s (%s)...", p->name, p->ip);
         int res = system(cmd);
-        if (res == 0) show_toast("Ping to %s: SUCCESS (Host Online)", g_app.peers[g_app.selected_peer].name);
-        else show_toast("Ping to %s: FAILED / TIMEOUT", g_app.peers[g_app.selected_peer].name);
+        if (res == 0) show_toast("Ping to %s: SUCCESS (Host Online)", p->name);
+        else show_toast("Ping to %s: FAILED / TIMEOUT", p->name);
     }
 }
 
 static void do_peer_ts_ping(void) {
-    if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.peer_count) {
+    if (g_app.selected_peer >= 0 && g_app.selected_peer < g_app.filtered_count) {
+        int peer_idx = g_app.filtered_indices[g_app.selected_peer];
+        PeerInfo *p = &g_app.peers[peer_idx];
         if (g_app.mock_mode) {
-            show_toast("[Mock Tailscale Ping] direct to %s: 14.2 ms", g_app.peers[g_app.selected_peer].name);
+            show_toast("[Mock Tailscale Ping] direct to %s: 14.2 ms", p->name);
             return;
         }
         char cmd[256];
-        snprintf(cmd, sizeof(cmd), "tailscale ping -c 1 %s >/dev/null 2>&1", g_app.peers[g_app.selected_peer].ip);
-        show_toast("Testing Tailscale WireGuard latency to %s...", g_app.peers[g_app.selected_peer].name);
+        snprintf(cmd, sizeof(cmd), "tailscale ping -c 1 %s >/dev/null 2>&1", p->ip);
+        show_toast("Testing Tailscale WireGuard latency to %s...", p->name);
         int res = system(cmd);
-        if (res == 0) show_toast("Tailscale Ping to %s: Connected!", g_app.peers[g_app.selected_peer].name);
-        else show_toast("Tailscale Ping to %s: Unreachable", g_app.peers[g_app.selected_peer].name);
+        if (res == 0) show_toast("Tailscale Ping to %s: Connected!", p->name);
+        else show_toast("Tailscale Ping to %s: Unreachable", p->name);
     }
 }
 
@@ -860,7 +919,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.2.3\n");
+            printf("ZeroScale v0.3.0\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -m, --mock         Run in local desktop simulation mode with synthetic data\n");

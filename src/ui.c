@@ -308,7 +308,11 @@ static void draw_dashboard(void) {
     draw_header_btn(btn7_x, 5, 7, "", "Q", "uit", 6);
 
     // Peer Table Header
-    tb_printf(2, 8, TB_WHITE | TB_BOLD, 0, "Tailscale Peer & Network Status (%d peers):", g_app.peer_count);
+    if (strlen(g_app.peer_filter) > 0) {
+        tb_printf(2, 8, TB_WHITE | TB_BOLD, 0, "Tailscale Peer & Network Status (%d/%d peers):", g_app.filtered_count, g_app.peer_count);
+    } else {
+        tb_printf(2, 8, TB_WHITE | TB_BOLD, 0, "Tailscale Peer & Network Status (%d peers):", g_app.peer_count);
+    }
 
     // Render Peers with distinctive color coding & triangle cursor
     int start_y = 10;
@@ -316,9 +320,10 @@ static void draw_dashboard(void) {
     if (max_rows < 1) max_rows = 1;
 
     for (int i = 0; i < max_rows; i++) {
-        int idx = i + g_app.peer_scroll;
-        if (idx >= g_app.peer_count) break;
-        PeerInfo *p = &g_app.peers[idx];
+        int row_idx = i + g_app.peer_scroll;
+        if (row_idx >= g_app.filtered_count) break;
+        int peer_idx = g_app.filtered_indices[row_idx];
+        PeerInfo *p = &g_app.peers[peer_idx];
 
         uint32_t fg = TB_WHITE;
         if (!p->is_online) {
@@ -335,11 +340,11 @@ static void draw_dashboard(void) {
 
         // Selection highlight
         uint32_t bg = 0;
-        if (idx == g_app.selected_peer) {
+        if (row_idx == g_app.selected_peer) {
             bg = TB_HI_BLACK;
         }
 
-        if (g_app.dash_focus == FOCUS_PEERS && idx == g_app.selected_peer) {
+        if (g_app.dash_focus == FOCUS_PEERS && row_idx == g_app.selected_peer) {
             tb_printf(1, start_y + i, TB_CYAN | TB_BOLD, bg, "▶");
         } else {
             tb_printf(1, start_y + i, TB_WHITE, bg, " ");
@@ -349,18 +354,22 @@ static void draw_dashboard(void) {
     }
 
     // Scroll Indicator
-    if (g_app.peer_count > max_rows) {
-        tb_printf(width - 14, 8, TB_YELLOW, 0, "[▼ %d more]", g_app.peer_count - (g_app.peer_scroll + max_rows));
+    if (g_app.filtered_count > max_rows) {
+        tb_printf(width - 14, 8, TB_YELLOW, 0, "[▼ %d more]", g_app.filtered_count - (g_app.peer_scroll + max_rows));
     }
 
-    // Toast Notification Bar
-    if (g_app.toast_expiry > time(NULL) && strlen(g_app.toast_msg) > 0) {
+    // Toast Notification Bar / Active Filter Search Bar
+    if (g_app.peer_filter_active) {
+        tb_printf(2, height - 3, TB_BLACK, TB_CYAN, " Search Peers: [ %s█ ]  (Press Enter to confirm, Esc to cancel) ", g_app.peer_filter);
+    } else if (g_app.toast_expiry > time(NULL) && strlen(g_app.toast_msg) > 0) {
         tb_printf(2, height - 3, TB_YELLOW | TB_BOLD, 0, "⚡ %s", g_app.toast_msg);
+    } else if (strlen(g_app.peer_filter) > 0) {
+        tb_printf(2, height - 3, TB_CYAN, 0, "Filtered by \"%s\" (%d matches) ── Press / to edit, Esc to clear", g_app.peer_filter, g_app.filtered_count);
     }
 
     // Bottom Status & Timer
     int pct = cfg->timerloop > 0 ? ((cfg->timerloop - g_app.countdown) * 100 / cfg->timerloop) : 0;
-    tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Click / Enter: Inspect | %s: Copy | q: Quit]", g_app.countdown, pct, g_app.copy_hint);
+    tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Enter: Inspect | /: Search | o: Sort | %s: Copy | q: Quit]", g_app.countdown, pct, g_app.copy_hint);
 }
 
 static void draw_unified_config_view(void) {
@@ -507,12 +516,13 @@ static void draw_peer_detail_modal(void) {
     int width = tb_width();
     int height = tb_height();
 
-    if (g_app.selected_peer < 0 || g_app.selected_peer >= g_app.peer_count) {
+    if (g_app.selected_peer < 0 || g_app.selected_peer >= g_app.filtered_count) {
         g_app.mode = VIEW_DASHBOARD;
         return;
     }
 
-    PeerInfo *p = &g_app.peers[g_app.selected_peer];
+    int peer_idx = g_app.filtered_indices[g_app.selected_peer];
+    PeerInfo *p = &g_app.peers[peer_idx];
 
     int box_w = (width >= 86) ? 80 : (width - 4);
     if (box_w < 60) box_w = 60;

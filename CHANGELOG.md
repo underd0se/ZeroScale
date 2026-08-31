@@ -7,11 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.4] - 2026-08-31
+## [0.3.0] - 2026-08-31
 
-### 🛡️ Robustness & Safety, Dynamic Hardware Badges & Desktop Simulation
+### 🔍 Live Peer Search & Multi-Mode Tailnet Sorting
 
-ZeroScale `v0.2.4` introduces fatal crash signal recovery for clean terminal restoration, dynamic router hardware and firmware detection in the header banner, strict IPv4 CIDR validation, custom flag shell sanitization, interactive migration prompts, and native desktop simulation mode (`--mock`).
+ZeroScale `v0.3.0` brings full real-time interactive peer search/filtering (`/`, `f`) and multi-mode peer sorting (`o`) to the live monitor dashboard while preserving `s` exclusively for starting the Tailscale daemon.
+
+#### 🌟 Added & Enhanced
+* **Live Peer Search & Filter (Press `/` or `f`):**
+  * Added real-time in-line search bar at the bottom of the dashboard.
+  * Filters peer nodes instantly as you type matching across device names, Tailscale IPs, users, operating systems, DERP relays, or active status.
+  * Clear search anytime with `Esc` or `Ctrl+U`.
+* **Multi-Mode Peer Sorting (Press `o` / Order):**
+  * Cycle dynamically through 4 sorting modes without colliding with the top action shortcuts:
+    1. **Default:** Tailscale tailnet natural order.
+    2. **Online First:** Sorts active direct nodes ➔ active relays ➔ idle nodes ➔ offline nodes, with alphabetical ties.
+    3. **Name (A–Z):** Case-insensitive alphabetical sorting.
+    4. **Operating System:** Groups peers by OS (Linux, macOS, iOS, Windows, Android, Synology).
+  * The local router (Self) is always kept pinned to the top for immediate access.
+
+---
+
+## [0.2.5] - 2026-08-31
+
+### 🛡️ Crash Signal Recovery, Hardware Badges & Input Validation
+
+ZeroScale `v0.2.5` introduces fatal crash signal recovery for clean terminal restoration, dynamic router hardware/firmware badges, strict IPv4 CIDR validation, custom flag shell sanitization, and native desktop simulation mode (`--mock`).
 
 #### 🌟 Added & Enhanced
 * **Fatal Crash Signal Recovery (`handle_fatal_signal`):**
@@ -24,8 +45,19 @@ ZeroScale `v0.2.4` introduces fatal crash signal recovery for clean terminal res
   * Sanitizes custom flags (`customparams`) to prevent dangerous shell escape characters.
 * **Native Desktop Simulation Mode (`--mock` / `make sim`):**
   * Allows building and running ZeroScale natively on macOS/Linux desktops with synthetic multi-device tailnet peers, exit nodes, and logs.
+
+---
+
+## [0.2.4] - 2026-08-31
+
+### 🛡️ Interactive Migration Consent, Namespace Isolation & Safe Coexistence
+
+ZeroScale `v0.2.4` introduces interactive migration prompts based on explicit user consent, strict CLI namespace isolation, non-invasive boot hook handling, and clean uninstallation with third-party reactivation guidance.
+
+#### 🌟 Added & Enhanced
 * **Interactive Migration Prompt on Existing Setup Detection:**
   * When an existing TAILMON installation is detected during setup, the installer prompts the user interactively (`[y/N]`) before importing configuration.
+  * If the user declines, all third-party files, configuration, cron jobs, and boot hooks remain 100% untouched.
 * **Strict CLI Namespace Isolation:**
   * Removed the `/opt/bin/tailmon` compatibility symlink. ZeroScale now installs strictly and exclusively to `/opt/bin/zeroscale` to prevent command collisions.
 * **Non-Invasive Boot Hook & Daemon Management:**

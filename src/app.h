@@ -83,6 +83,13 @@ typedef struct {
     int tailnet_connected;
 } AppConfig;
 
+typedef enum {
+    SORT_DEFAULT = 0,
+    SORT_ONLINE_FIRST,
+    SORT_NAME_ASC,
+    SORT_OS
+} PeerSortMode;
+
 typedef struct {
     ViewMode mode;
     ViewMode prev_mode;
@@ -98,6 +105,13 @@ typedef struct {
     int peer_count;
     int peer_scroll;
     int selected_peer;
+
+    // Peer Filter & Sorting
+    PeerSortMode peer_sort_mode;
+    char peer_filter[64];
+    int peer_filter_active;
+    int filtered_indices[MAX_PEERS];
+    int filtered_count;
 
     // Logs
     char log_lines[MAX_LOG_LINES][LOG_LINE_LEN];
@@ -151,6 +165,8 @@ void save_config(void);
 int sanitize_custom_flags(const char *input, char *output, size_t maxlen);
 int validate_cidr_list(const char *input, char *output, size_t maxlen);
 void refresh_tailscale_status(void);
+void apply_peer_filter_and_sort(void);
+void cycle_peer_sort(void);
 void load_logs(void);
 void log_event(const char *level, const char *fmt, ...);
 void show_toast(const char *fmt, ...);

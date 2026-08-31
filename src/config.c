@@ -42,7 +42,7 @@ void log_event(const char *level, const char *fmt, ...) {
 
 void load_mock_data(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.2.3");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.0");
     snprintf(cfg->tsver, sizeof(cfg->tsver), "1.102.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Kernel");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
@@ -152,6 +152,8 @@ void load_mock_data(void) {
     snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:02:15 RT-AX86U ZEROSCALE[1024] - INFO: Peer macbook-pro active via direct WireGuard socket.");
     snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:03:00 RT-AX86U ZEROSCALE[1024] - INFO: Watchdog check passed - tailscaled is healthy.");
     snprintf(g_app.log_lines[g_app.log_count++], LOG_LINE_LEN, "Aug 31 2026 18:04:30 RT-AX86U ZEROSCALE[1024] - INFO: Exit node mode advertised and active.");
+
+    apply_peer_filter_and_sort();
 }
 
 void detect_router_info(void) {
@@ -263,7 +265,7 @@ static void get_router_lan_subnet(char *dest, size_t maxlen) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.2.3");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.0");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
     cfg->timerloop = 60;
@@ -556,6 +558,76 @@ void refresh_tailscale_status(void) {
         }
         pclose(pf);
     }
+    apply_peer_filter_and_sort();
+}
+
+static int peer_comparator(const void *a, const void *b) {
+    int idx_a = *(const int *)a;
+    int idx_b = *(const int *)b;
+    PeerInfo *pa = &g_app.peers[idx_a];
+    PeerInfo *pb = &g_app.peers[idx_b];
+
+    // Self always comes first regardless of sort mode
+    if (pa->is_self) return -1;
+    if (pb->is_self) return 1;
+
+    switch (g_app.peer_sort_mode) {
+        case SORT_ONLINE_FIRST: {
+            int score_a = pa->is_online ? (pa->is_active ? 3 : (pa->is_idle ? 2 : 1)) : 0;
+            int score_b = pb->is_online ? (pb->is_active ? 3 : (pb->is_idle ? 2 : 1)) : 0;
+            if (score_a != score_b) return score_b - score_a;
+            return strcasecmp(pa->name, pb->name);
+        }
+        case SORT_NAME_ASC:
+            return strcasecmp(pa->name, pb->name);
+        case SORT_OS: {
+            int os_cmp = strcasecmp(pa->os, pb->os);
+            if (os_cmp != 0) return os_cmp;
+            return strcasecmp(pa->name, pb->name);
+        }
+        case SORT_DEFAULT:
+        default:
+            return idx_a - idx_b;
+    }
+}
+
+void apply_peer_filter_and_sort(void) {
+    g_app.filtered_count = 0;
+    size_t filter_len = strlen(g_app.peer_filter);
+
+    for (int i = 0; i < g_app.peer_count && i < MAX_PEERS; i++) {
+        PeerInfo *p = &g_app.peers[i];
+        if (filter_len == 0) {
+            g_app.filtered_indices[g_app.filtered_count++] = i;
+        } else {
+            if (strcasestr(p->name, g_app.peer_filter) ||
+                strcasestr(p->ip, g_app.peer_filter) ||
+                strcasestr(p->user, g_app.peer_filter) ||
+                strcasestr(p->os, g_app.peer_filter) ||
+                strcasestr(p->relay_info, g_app.peer_filter) ||
+                strcasestr(p->status, g_app.peer_filter)) {
+                g_app.filtered_indices[g_app.filtered_count++] = i;
+            }
+        }
+    }
+
+    if (g_app.peer_sort_mode != SORT_DEFAULT && g_app.filtered_count > 1) {
+        qsort(g_app.filtered_indices, g_app.filtered_count, sizeof(int), peer_comparator);
+    }
+
+    if (g_app.selected_peer >= g_app.filtered_count) {
+        g_app.selected_peer = g_app.filtered_count - 1;
+    }
+    if (g_app.selected_peer < 0 && g_app.filtered_count > 0) {
+        g_app.selected_peer = 0;
+    }
+}
+
+void cycle_peer_sort(void) {
+    g_app.peer_sort_mode = (g_app.peer_sort_mode + 1) % 4;
+    apply_peer_filter_and_sort();
+    const char *sort_names[] = {"Default (Tailnet Order)", "Online First", "Name (A-Z)", "Operating System"};
+    show_toast("Sort: %s", sort_names[g_app.peer_sort_mode]);
 }
 
 void load_logs(void) {
