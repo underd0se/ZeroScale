@@ -322,7 +322,7 @@ static void trigger_config_action(int idx) {
         case 3: cycle_opmode(); break;
         case 4: toggle_exitnode(); break;
         case 5: toggle_advroutes(); break;
-        case 6: request_input(INPUT_ROUTES, "Subnet Routes CIDR", "Enter subnet CIDR to advertise", g_app.config.routes); break;
+        case 6: request_input(INPUT_ROUTES, "Subnet Routes CIDR", "Enter subnet CIDRs, comma-separated (e.g. 192.168.1.0/24,10.0.0.0/24)", g_app.config.routes); break;
         case 7: cycle_timerloop(); break;
         case 8: {
             char buf[16];
@@ -386,13 +386,25 @@ static void handle_config_key(struct tb_event *ev) {
         if (g_app.config_selected_idx < 14) g_app.config_selected_idx++;
     } else if (ev->key == TB_KEY_ARROW_UP) {
         if (g_app.config_selected_idx > 0) g_app.config_selected_idx--;
-    } else if (ev->key == TB_KEY_ENTER || ev->ch == ' ') {
+    } else if (ev->key == TB_KEY_ENTER) {
+        if (g_app.config_selected_idx == 3 && strcasecmp(g_app.config.opmode, "Custom") == 0) {
+            request_input(INPUT_CUSTOMPARAMS, "Custom Tailscale Flags", "Enter custom tailscale up flags (e.g. --accept-routes)", g_app.config.customparams);
+        } else {
+            trigger_config_action(g_app.config_selected_idx);
+        }
+    } else if (ev->ch == ' ') {
         trigger_config_action(g_app.config_selected_idx);
     } else if (ev->ch == '1') {
         s_config_pending_digit = 1;
         s_config_digit_time = time(NULL);
         g_app.config_selected_idx = 0;
         show_toast("Option (1)... [Press 0-5 for (10)-(15), or Enter for (1)]");
+    } else if (ev->ch == '4') {
+        if (strcasecmp(g_app.config.opmode, "Custom") == 0) {
+            request_input(INPUT_CUSTOMPARAMS, "Custom Tailscale Flags", "Enter custom tailscale up flags (e.g. --accept-routes)", g_app.config.customparams);
+        } else {
+            trigger_config_action(3);
+        }
     } else if (ev->ch >= '2' && ev->ch <= '9') {
         trigger_config_action(ev->ch - '1');
     } else if (ev->ch == 'u' || ev->ch == 'U') {
@@ -453,7 +465,7 @@ static void do_peer_ts_ping(void) {
 }
 
 static void handle_peer_detail_key(struct tb_event *ev) {
-    if (ev->key == TB_KEY_ESC || ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q') {
+    if (ev->key == TB_KEY_ESC || ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
         g_app.mode = VIEW_DASHBOARD;
     } else if (ev->ch == 'p' || ev->ch == 'P') {
         g_app.peer_detail_selected_btn = 0;
@@ -507,7 +519,7 @@ static void handle_peer_detail_mouse(struct tb_event *ev) {
 // View: Log Viewer Handlers
 
 static void handle_logs_key(struct tb_event *ev) {
-    if (ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q') {
+    if (ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
         g_app.mode = VIEW_DASHBOARD;
     } else if (ev->ch == 'r' || ev->ch == 'R') {
         load_logs();
@@ -556,6 +568,11 @@ static void save_input_action(void) {
         save_config();
         log_event("INFO", "Log retention updated to: %d rows.", g_app.config.logsize);
         show_toast("Log Retention updated to: %d rows", g_app.config.logsize);
+    } else if (g_app.input_target == INPUT_CUSTOMPARAMS) {
+        snprintf(g_app.config.customparams, sizeof(g_app.config.customparams), "%s", g_app.input_buf);
+        save_config();
+        log_event("INFO", "Custom Tailscale flags updated to: %s", g_app.config.customparams);
+        show_toast("Custom Flags updated: %s", g_app.config.customparams);
     }
     g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
 }
@@ -573,18 +590,36 @@ static void handle_input_key(struct tb_event *ev) {
 
     if (g_app.input_selected_btn == 0) {
         // Focus is on text input box
+        int len = (int)strlen(g_app.input_buf);
+
         if (ev->key == TB_KEY_ENTER) {
             save_input_action();
         } else if (ev->key == TB_KEY_TAB || ev->key == TB_KEY_ARROW_DOWN) {
             g_app.input_selected_btn = 1; // Move to Save button
-        } else if (ev->key == TB_KEY_BACKSPACE || ev->key == TB_KEY_BACKSPACE2) {
-            if (g_app.input_cursor > 0) {
-                g_app.input_buf[--g_app.input_cursor] = '\0';
+        } else if (ev->key == TB_KEY_ARROW_LEFT) {
+            if (g_app.input_cursor > 0) g_app.input_cursor--;
+        } else if (ev->key == TB_KEY_ARROW_RIGHT) {
+            if (g_app.input_cursor < len) g_app.input_cursor++;
+        } else if (ev->key == TB_KEY_HOME || (ev->key == TB_KEY_CTRL_A)) {
+            g_app.input_cursor = 0;
+        } else if (ev->key == TB_KEY_END || (ev->key == TB_KEY_CTRL_E)) {
+            g_app.input_cursor = len;
+        } else if (ev->key == TB_KEY_DELETE || (ev->key == TB_KEY_CTRL_D)) {
+            if (g_app.input_cursor < len) {
+                memmove(&g_app.input_buf[g_app.input_cursor], &g_app.input_buf[g_app.input_cursor + 1], len - g_app.input_cursor);
             }
+        } else if (ev->key == TB_KEY_BACKSPACE || ev->key == TB_KEY_BACKSPACE2) {
+            if (g_app.input_cursor > 0 && len > 0) {
+                memmove(&g_app.input_buf[g_app.input_cursor - 1], &g_app.input_buf[g_app.input_cursor], len - g_app.input_cursor + 1);
+                g_app.input_cursor--;
+            }
+        } else if (ev->key == TB_KEY_CTRL_U || ev->key == TB_KEY_CTRL_K) {
+            g_app.input_buf[0] = '\0';
+            g_app.input_cursor = 0;
         } else if (ev->ch >= 32 && ev->ch <= 126) {
-            if (g_app.input_cursor < (int)sizeof(g_app.input_buf) - 2) {
+            if (len < (int)sizeof(g_app.input_buf) - 2) {
+                memmove(&g_app.input_buf[g_app.input_cursor + 1], &g_app.input_buf[g_app.input_cursor], len - g_app.input_cursor + 1);
                 g_app.input_buf[g_app.input_cursor++] = (char)ev->ch;
-                g_app.input_buf[g_app.input_cursor] = '\0';
             }
         }
     } else if (g_app.input_selected_btn == 1) {
@@ -595,12 +630,12 @@ static void handle_input_key(struct tb_event *ev) {
             g_app.input_selected_btn = 2; // Move to Cancel button
         } else if (ev->key == TB_KEY_ARROW_UP || ev->key == TB_KEY_ARROW_LEFT) {
             g_app.input_selected_btn = 0; // Return to text field
-        } else if (ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q') {
+        } else if (ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
             cancel_input_action();
         }
     } else if (g_app.input_selected_btn == 2) {
         // Focus is on Cancel button
-        if (ev->key == TB_KEY_ENTER || ev->ch == ' ' || ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q') {
+        if (ev->key == TB_KEY_ENTER || ev->ch == ' ' || ev->ch == 'c' || ev->ch == 'C' || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
             cancel_input_action();
         } else if (ev->key == TB_KEY_ARROW_LEFT) {
             g_app.input_selected_btn = 1; // Move to Save button
@@ -616,14 +651,20 @@ static void handle_input_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
         int width = tb_width();
         int height = tb_height();
-        int box_w = (width >= 74) ? 68 : (width - 4);
-        int box_h = 8;
+        int box_w = (width >= 82) ? 78 : (width - 4);
+        if (box_w < 50) box_w = 50;
+        int box_h = 9;
         int start_x = (width - box_w) / 2;
         int start_y = (height - box_h) / 2;
 
-        if (ev->y == start_y + 4) {
+        if (ev->y == start_y + 5) {
             g_app.input_selected_btn = 0; // Click text field
-        } else if (ev->y == start_y + 6) {
+            int clicked_pos = ev->x - (start_x + 3);
+            int len = (int)strlen(g_app.input_buf);
+            if (clicked_pos < 0) clicked_pos = 0;
+            if (clicked_pos > len) clicked_pos = len;
+            g_app.input_cursor = clicked_pos;
+        } else if (ev->y == start_y + 7) {
             if (ev->x >= start_x + 4 && ev->x < start_x + 12) {
                 g_app.input_selected_btn = 1;
                 save_input_action();
@@ -666,7 +707,7 @@ static void handle_confirm_key(struct tb_event *ev) {
         }
     } else if (ev->ch == 'y' || ev->ch == 'Y' || ev->ch == act_char || ev->ch == (char)toupper((unsigned char)act_char)) {
         execute_confirm_action();
-    } else if (ev->ch == 'n' || ev->ch == 'N' || ev->ch == 'c' || ev->ch == 'C' || ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q') {
+    } else if (ev->ch == 'n' || ev->ch == 'N' || ev->ch == 'c' || ev->ch == 'C' || ev->key == TB_KEY_ESC || ev->ch == 'q' || ev->ch == 'Q' || ev->ch == 'e' || ev->ch == 'E') {
         cancel_confirm_action();
     }
 }

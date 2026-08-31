@@ -390,7 +390,17 @@ static void draw_unified_config_view(void) {
     tb_printf(2, 10, (cur == 3) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 3) ? "▶" : " ");
     tb_printf(4, 10, TB_GREEN | TB_BOLD, 0, "(4)");
     tb_printf(7, 10, TB_WHITE, 0, " Tailscale Operating Mode       : ");
-    tb_printf(41, 10, TB_CYAN | TB_BOLD, 0, "%s Mode", cfg->opmode);
+    if (strcasecmp(cfg->opmode, "Custom") == 0) {
+        if (strlen(cfg->customparams) > 0) {
+            tb_printf(41, 10, TB_MAGENTA | TB_BOLD, 0, "Custom (%s)", cfg->customparams);
+        } else {
+            tb_printf(41, 10, TB_MAGENTA | TB_BOLD, 0, "Custom Mode");
+        }
+    } else if (strcasecmp(cfg->opmode, "Kernel") == 0) {
+        tb_printf(41, 10, TB_CYAN | TB_BOLD, 0, "Kernel (TUN) Mode");
+    } else {
+        tb_printf(41, 10, TB_CYAN | TB_BOLD, 0, "Userspace Mode");
+    }
 
     tb_printf(2, 11, (cur == 4) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 4) ? "▶" : " ");
     tb_printf(4, 11, TB_GREEN | TB_BOLD, 0, "(5)");
@@ -564,21 +574,44 @@ static void draw_input_modal(void) {
     int width = tb_width();
     int height = tb_height();
 
-    int box_w = (width >= 74) ? 68 : (width - 4);
-    int box_h = 8;
+    int box_w = (width >= 82) ? 78 : (width - 4);
+    if (box_w < 50) box_w = 50;
+    int box_h = 9;
     int start_x = (width - box_w) / 2;
     int start_y = (height - box_h) / 2;
 
     draw_modal_box(start_x, start_y, box_w, box_h, g_app.input_title, TB_YELLOW | TB_BOLD, TB_HI_BLACK);
 
-    tb_printf(start_x + 3, start_y + 2, TB_WHITE, TB_HI_BLACK, "%.*s:", box_w - 8, g_app.input_prompt);
+    tb_printf(start_x + 3, start_y + 2, TB_WHITE | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 8, g_app.input_prompt);
+    tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ to move cursor, Enter to save, Tab for buttons.");
 
     int text_focused = (g_app.input_selected_btn == 0);
-    tb_printf(start_x + 3, start_y + 4, text_focused ? (TB_CYAN | TB_BOLD | TB_UNDERLINE) : (TB_WHITE | TB_BOLD), TB_HI_BLACK, "%.*s%s", box_w - 8, g_app.input_buf, text_focused ? "_" : " ");
+    int input_field_y = start_y + 5;
+    int max_input_display = box_w - 8;
+    int buf_len = (int)strlen(g_app.input_buf);
 
-    draw_modal_btn(start_x + 4, start_y + 6, "Save", (g_app.input_selected_btn == 1), 1, 0);
-    draw_modal_btn(start_x + 14, start_y + 6, "Cancel", (g_app.input_selected_btn == 2), 0, 0);
-    tb_set_cell(start_x + box_w - 1, start_y + 6, 0x2502 /* │ */, TB_YELLOW | TB_BOLD, TB_HI_BLACK);
+    // Clear input field line inside modal
+    for (int x = 0; x < max_input_display; x++) {
+        tb_set_cell(start_x + 3 + x, input_field_y, ' ', TB_WHITE, TB_HI_BLACK);
+    }
+
+    // Render characters with visible block cursor at input_cursor position
+    for (int i = 0; i < buf_len && i < max_input_display; i++) {
+        char ch = g_app.input_buf[i];
+        if (text_focused && i == g_app.input_cursor) {
+            tb_set_cell(start_x + 3 + i, input_field_y, ch, TB_BLACK, TB_CYAN | TB_BOLD);
+        } else {
+            tb_set_cell(start_x + 3 + i, input_field_y, ch, TB_CYAN | TB_BOLD, TB_HI_BLACK);
+        }
+    }
+    // If cursor is at the end of the text
+    if (text_focused && g_app.input_cursor == buf_len && buf_len < max_input_display) {
+        tb_set_cell(start_x + 3 + buf_len, input_field_y, ' ', TB_BLACK, TB_CYAN | TB_BOLD);
+    }
+
+    draw_modal_btn(start_x + 4, start_y + 7, "Save", (g_app.input_selected_btn == 1), 1, 0);
+    draw_modal_btn(start_x + 14, start_y + 7, "Cancel", (g_app.input_selected_btn == 2), 0, 0);
+    tb_set_cell(start_x + box_w - 1, start_y + 7, 0x2502 /* │ */, TB_YELLOW | TB_BOLD, TB_HI_BLACK);
 }
 
 static void draw_confirm_dialog(void) {

@@ -31,10 +31,30 @@ void log_event(const char *level, const char *fmt, ...) {
     fclose(f);
 }
 
+static void get_router_lan_subnet(char *dest, size_t maxlen) {
+    FILE *f = popen("nvram get lan_ipaddr 2>/dev/null", "r");
+    if (f) {
+        char ip[32] = {0};
+        if (fgets(ip, sizeof(ip), f)) {
+            ip[strcspn(ip, "\r\n")] = 0;
+            char *last_dot = strrchr(ip, '.');
+            if (last_dot && last_dot != ip) {
+                *last_dot = '\0';
+                snprintf(dest, maxlen, "%s.0/24", ip);
+                pclose(f);
+                return;
+            }
+        }
+        pclose(f);
+    }
+    snprintf(dest, maxlen, "192.168.50.0/24");
+}
+
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
     snprintf(cfg->version, sizeof(cfg->version), "0.2.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
+    snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
     cfg->timerloop = 60;
     cfg->keepalive = 1;
     cfg->persistentsettings = 0;
@@ -49,7 +69,7 @@ void load_config(void) {
     cfg->schedulehrs = 1;
     cfg->schedulemin = 0;
     cfg->track = 0;
-    snprintf(cfg->routes, sizeof(cfg->routes), "192.168.1.0/24");
+    get_router_lan_subnet(cfg->routes, sizeof(cfg->routes));
 
     FILE *f = fopen("/jffs/addons/zeroscale.d/zeroscale.cfg", "r");
     if (!f) return;
@@ -85,11 +105,12 @@ void load_config(void) {
         else if (strcmp(key, "track") == 0) cfg->track = atoi(val);
         else if (strcmp(key, "routes") == 0 && strlen(val) > 0) snprintf(cfg->routes, sizeof(cfg->routes), "%s", val);
         else if (strcmp(key, "tsoperatingmode") == 0 && strlen(val) > 0) snprintf(cfg->opmode, sizeof(cfg->opmode), "%s", val);
+        else if ((strcmp(key, "customparams") == 0 || strcmp(key, "customflags") == 0) && strlen(val) > 0) snprintf(cfg->customparams, sizeof(cfg->customparams), "%s", val);
     }
     fclose(f);
 
     if (strlen(cfg->routes) == 0) {
-        snprintf(cfg->routes, sizeof(cfg->routes), "192.168.50.0/24");
+        get_router_lan_subnet(cfg->routes, sizeof(cfg->routes));
     }
     if (strlen(cfg->opmode) == 0) {
         snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
@@ -115,6 +136,7 @@ void save_config(void) {
     fprintf(f, "amtmemailfailure=%d\n", cfg->amtmemailfailure);
     fprintf(f, "ratelimit=%d\n", cfg->ratelimit);
     fprintf(f, "tsoperatingmode=\"%s\"\n", cfg->opmode);
+    fprintf(f, "customparams=\"%s\"\n", cfg->customparams);
     fprintf(f, "persistentsettings=%d\n", cfg->persistentsettings);
     fprintf(f, "exitnode=%d\n", cfg->exitnode);
     fprintf(f, "advroutes=%d\n", cfg->advroutes);
@@ -219,15 +241,22 @@ void cycle_schedule(void) {
 }
 
 void cycle_opmode(void) {
-    if (strcmp(g_app.config.opmode, "Userspace") == 0) {
+    if (strcasecmp(g_app.config.opmode, "Userspace") == 0) {
         snprintf(g_app.config.opmode, sizeof(g_app.config.opmode), "Kernel");
         show_toast("Operating Mode: Kernel (TUN)");
+        save_config();
+        log_event("INFO", "Operating mode set to Kernel.");
+    } else if (strcasecmp(g_app.config.opmode, "Kernel") == 0) {
+        snprintf(g_app.config.opmode, sizeof(g_app.config.opmode), "Custom");
+        save_config();
+        log_event("INFO", "Operating mode set to Custom.");
+        request_input(INPUT_CUSTOMPARAMS, "Custom Tailscale Flags", "Enter custom tailscale up flags (e.g. --accept-routes)", g_app.config.customparams);
     } else {
         snprintf(g_app.config.opmode, sizeof(g_app.config.opmode), "Userspace");
         show_toast("Operating Mode: Userspace");
+        save_config();
+        log_event("INFO", "Operating mode set to Userspace.");
     }
-    save_config();
-    log_event("INFO", "Operating mode set to %s.", g_app.config.opmode);
 }
 
 void switch_track(void) {

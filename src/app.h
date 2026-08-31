@@ -38,7 +38,8 @@ typedef enum {
 
 typedef enum {
     INPUT_ROUTES,
-    INPUT_LOGSIZE
+    INPUT_LOGSIZE,
+    INPUT_CUSTOMPARAMS
 } InputTarget;
 
 typedef struct {
@@ -60,6 +61,7 @@ typedef struct {
     char version[16];
     char tsver[16];
     char opmode[24];
+    char customparams[256];
     int keepalive;
     int timerloop;
     int persistentsettings;
