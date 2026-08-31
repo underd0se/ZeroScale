@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.4] - 2026-08-31
+
+### 🛡️ Interactive User Consent for Migration, Namespace Isolation & Safe Coexistence
+
+ZeroScale `v0.2.4` introduces interactive migration prompts based on explicit user consent, strict CLI namespace isolation, non-invasive boot hook handling, and clean uninstallation with third-party reactivation guidance.
+
+#### 🌟 Added & Enhanced
+* **Interactive Migration Prompt on Existing Setup Detection:**
+  * When an existing TAILMON installation is detected during setup, the installer now prompts the user interactively (`[y/N]`) before importing configuration or disabling background hooks.
+  * If the user declines, all third-party files, configuration, cron jobs, and boot hooks remain 100% untouched.
+* **Strict CLI Namespace Isolation:**
+  * Removed the `/opt/bin/tailmon` compatibility symlink. ZeroScale now installs strictly and exclusively to `/opt/bin/zeroscale` to prevent command collisions.
+* **Non-Invasive Boot Hook & Daemon Management:**
+  * C-TUI configuration and uninstall routines now strictly modify `/zeroscale/` lines in `/jffs/scripts/post-mount`, preserving any existing third-party hooks.
+* **Legacy Symlink & Artifact Sanitization:**
+  * Automatically detects and removes stale `/opt/bin/tailmon` symlinks leftover from older ZeroScale/Tailmon-Zero versions that pointed to ZeroScale.
+  * Restores `/opt/bin/tailmon` to point back to the authentic TAILMON script (`/jffs/scripts/tailmon.sh`) if present on disk.
+  * Purges obsolete development artifacts (`/opt/bin/tailmon-zero`, `/jffs/scripts/tailmon-zero`).
+* **Clean Uninstallation & Re-activation Hint:**
+  * Uninstallation cleanly removes all ZeroScale directories, binaries, and cron jobs, and detects whether TAILMON is present on the filesystem to display a helpful re-activation tip.
+
+---
+
 ## [0.2.3] - 2026-08-31
 
 ### 🛠️ PuTTY Redraw Fixes, Custom Mode Flags Editor & Smart Menu Navigation

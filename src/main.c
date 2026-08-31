@@ -65,6 +65,24 @@ void detect_terminal(void) {
     }
 }
 
+static void sanitize_legacy_symlinks(void) {
+    char target[256];
+    ssize_t len = readlink("/opt/bin/tailmon", target, sizeof(target) - 1);
+    if (len > 0) {
+        target[len] = '\0';
+        if (strstr(target, "zeroscale") || strstr(target, "tailmon-zero")) {
+            unlink("/opt/bin/tailmon");
+            if (access("/jffs/scripts/tailmon.sh", F_OK) == 0) {
+                symlink("/jffs/scripts/tailmon.sh", "/opt/bin/tailmon");
+            } else if (access("/jffs/scripts/tailmon", F_OK) == 0) {
+                symlink("/jffs/scripts/tailmon", "/opt/bin/tailmon");
+            }
+        }
+    }
+    unlink("/opt/bin/tailmon-zero");
+    unlink("/jffs/scripts/tailmon-zero");
+}
+
 void app_init(void) {
     memset(&g_app, 0, sizeof(g_app));
     g_app.running = 1;
@@ -75,6 +93,7 @@ void app_init(void) {
     signal(SIGTERM, handle_sigint);
 
     detect_terminal();
+    sanitize_legacy_symlinks();
 
     tb_init();
     tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
@@ -144,10 +163,15 @@ void uninstall_zeroscale(void) {
     show_splash("UNINSTALLING ZEROSCALE...", 600, TB_RED | TB_BOLD);
     system("/opt/etc/init.d/S06tailscaled stop 2>/dev/null; "
            "sed -i -e '/zeroscale/d' /jffs/scripts/post-mount 2>/dev/null; "
-           "cru d zeroscale_autoupdate 2>/dev/null");
+           "cru d zeroscale_autoupdate 2>/dev/null; "
+           "rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale /opt/bin/zeroscale");
     show_splash("UNINSTALL COMPLETE", 800, TB_HI_BLACK);
     tb_shutdown();
-    printf("\n[ZeroScale Successfully Uninstalled from Router]\n\n");
+    printf("\n[ZeroScale Successfully Uninstalled from Router]\n");
+    if (access("/jffs/scripts/tailmon.sh", F_OK) == 0 || access("/jffs/scripts/tailmon", F_OK) == 0) {
+        printf("[*] TAILMON was detected on your system. To re-activate TAILMON, simply run: tailmon\n");
+    }
+    printf("\n");
     exit(0);
 }
 
@@ -781,7 +805,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.2.3\n");
+            printf("ZeroScale v0.2.4\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -i, --install      Install Entware Tailscale and ZeroScale services\n");

@@ -9,7 +9,7 @@ set -e
 export PATH="/opt/bin:/opt/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PATH:-}"
 
 REPO_RAW_URL="https://raw.githubusercontent.com/underd0se/ZeroScale/main"
-VERSION="v0.2.3"
+VERSION="v0.2.4"
 INSTALL_DIR="/jffs/scripts"
 TARGET_BIN="${INSTALL_DIR}/zeroscale"
 CONFIG_DIR="/jffs/addons/zeroscale.d"
@@ -158,6 +158,25 @@ mv -f "${TMP_BIN}" "${TARGET_BIN}"
 # Create convenience symlinks in /opt/bin
 if [ -d "/opt/bin" ]; then
     ln -sf "${TARGET_BIN}" "/opt/bin/zeroscale"
+
+    # Sanitize stale /opt/bin/tailmon if it was pointing to ZeroScale from previous versions
+    if [ -L "/opt/bin/tailmon" ]; then
+        LINK_TARGET="$(readlink /opt/bin/tailmon 2>/dev/null || true)"
+        case "${LINK_TARGET}" in
+            *zeroscale*|*tailmon-zero*)
+                rm -f "/opt/bin/tailmon"
+                # If legitimate TAILMON script exists on disk, restore its pointer
+                if [ -f "/jffs/scripts/tailmon.sh" ]; then
+                    ln -sf "/jffs/scripts/tailmon.sh" "/opt/bin/tailmon"
+                elif [ -f "/jffs/scripts/tailmon" ]; then
+                    ln -sf "/jffs/scripts/tailmon" "/opt/bin/tailmon"
+                fi
+                ;;
+        esac
+    fi
+
+    # Clean legacy development symlinks and binaries
+    rm -f "/opt/bin/tailmon-zero" "/jffs/scripts/tailmon-zero" 2>/dev/null || true
 fi
 
 # -------------------------------------------------------------------------------------------------------------------------
