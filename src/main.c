@@ -292,6 +292,12 @@ static void handle_dashboard_key(struct tb_event *ev) {
     } else if (ev->ch == 'o' || ev->ch == 'O') {
         cycle_peer_sort();
         return;
+    } else if (ev->ch == '+' || ev->ch == '=' || ev->ch == ']') {
+        step_timerloop(1);
+        return;
+    } else if (ev->ch == '-' || ev->ch == '_' || ev->ch == '[') {
+        step_timerloop(-1);
+        return;
     } else if (ev->key == TB_KEY_ESC) {
         if (strlen(g_app.peer_filter) > 0) {
             g_app.peer_filter[0] = '\0';

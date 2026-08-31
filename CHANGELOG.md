@@ -21,6 +21,9 @@ ZeroScale `v0.3.1` delivers a comprehensive adaptive responsive design overhaul 
   * Dynamic value column alignment (shifts to column 28 on `< 80` cols) with concise label phrasing.
   * Safe character truncation (`%.*s`) prevents long subnet CIDRs and custom flags from overflowing dialog borders.
   * Adaptive compact navigation bar hint `[ ↑/↓: Nav | Enter: Edit | 1-15: Select | Esc: Back ]`.
+* **⏱️ Quick Live Refresh Timer Stepping (`+` / `-`):**
+  * Step polling intervals instantly from the dashboard (`10s ↔ 30s ↔ 60s ↔ 120s ↔ 300s`) using `+`, `=`, `]` or `-`, `_`, `[`.
+  * Instantly saves configuration and displays a toast notification with the updated timer.
 * **📊 Per-Node Rx/Tx Traffic Metrics & Activity Tracking:**
   * Added dedicated `Traffic (Tx/Rx)` (`▲ Tx │ ▼ Rx`) and `Last Activity` statistics to the Peer Node Inspector modal (`Enter` / click).
   * Automatically extracts real-time transfer throughput and timestamps from Tailscale engine telemetry.

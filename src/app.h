@@ -184,6 +184,7 @@ void toggle_autostart(void);
 void toggle_exitnode(void);
 void toggle_advroutes(void);
 void cycle_timerloop(void);
+void step_timerloop(int direction);
 void cycle_amtm_email(void);
 void cycle_schedule(void);
 void cycle_opmode(void);

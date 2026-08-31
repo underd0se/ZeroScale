@@ -450,9 +450,9 @@ static void draw_dashboard(void) {
     // Bottom Status & Timer
     int pct = cfg->timerloop > 0 ? ((cfg->timerloop - g_app.countdown) * 100 / cfg->timerloop) : 0;
     if (is_compact) {
-        tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %02d%% ] [Enter: Inspect | /: Search | o: Sort | q: Quit]", g_app.countdown, pct);
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %02d%% ] [Enter: View | /: Search | +/-: Timer | q: Quit]", g_app.countdown, pct);
     } else {
-        tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Enter: Inspect | /: Search | o: Sort | %s: Copy | q: Quit]", g_app.countdown, pct, g_app.copy_hint);
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ %02ds / %03d%% ]  [Enter: Inspect | /: Search | o: Sort | +/-: Timer (%ds) | %s: Copy | q: Quit]", g_app.countdown, pct, cfg->timerloop, g_app.copy_hint);
     }
 }
 

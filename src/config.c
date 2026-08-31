@@ -464,18 +464,36 @@ void toggle_advroutes(void) {
     show_toast("Advertise Subnet Routes: %s (%s)", g_app.config.advroutes ? "Enabled" : "Disabled", g_app.config.routes);
 }
 
-void cycle_timerloop(void) {
-    int cur = g_app.config.timerloop;
-    if (cur <= 10) g_app.config.timerloop = 30;
-    else if (cur <= 30) g_app.config.timerloop = 60;
-    else if (cur <= 60) g_app.config.timerloop = 120;
-    else if (cur <= 120) g_app.config.timerloop = 300;
-    else g_app.config.timerloop = 10;
+static const int s_timer_steps[] = { 10, 30, 60, 120, 300 };
+static const int s_timer_steps_count = 5;
 
+void step_timerloop(int direction) {
+    int cur = g_app.config.timerloop;
+    int cur_idx = 2; // default 60s
+    for (int i = 0; i < s_timer_steps_count; i++) {
+        if (cur <= s_timer_steps[i]) {
+            cur_idx = i;
+            break;
+        }
+    }
+
+    if (direction > 0) {
+        if (cur_idx < s_timer_steps_count - 1) cur_idx++;
+        else cur_idx = 0;
+    } else if (direction < 0) {
+        if (cur_idx > 0) cur_idx--;
+        else cur_idx = s_timer_steps_count - 1;
+    }
+
+    g_app.config.timerloop = s_timer_steps[cur_idx];
     g_app.countdown = g_app.config.timerloop;
     save_config();
     log_event("INFO", "Status check interval set to %ds.", g_app.config.timerloop);
     show_toast("Status Check Interval: %ds", g_app.config.timerloop);
+}
+
+void cycle_timerloop(void) {
+    step_timerloop(1);
 }
 
 void cycle_amtm_email(void) {
