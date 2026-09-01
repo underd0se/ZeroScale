@@ -39,7 +39,8 @@ typedef enum {
 typedef enum {
     INPUT_ROUTES,
     INPUT_LOGSIZE,
-    INPUT_CUSTOMPARAMS
+    INPUT_CUSTOMPARAMS,
+    INPUT_SCHEDULE
 } InputTarget;
 
 typedef struct {

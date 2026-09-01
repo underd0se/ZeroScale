@@ -482,7 +482,16 @@ static void trigger_config_action(int idx) {
             break;
         }
         case 9: cycle_amtm_email(); break;
-        case 10: cycle_schedule(); break;
+        case 10: {
+            if (!g_app.config.schedule) {
+                cycle_schedule();
+            } else {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%02d:%02d", g_app.config.schedulehrs, g_app.config.schedulemin);
+                request_input(INPUT_SCHEDULE, "Auto-Update Time (24h)", "Enter run time (HH:MM or 0-23) or 'off' to disable:", buf);
+            }
+            break;
+        }
         case 11: switch_track(); break;
         case 12:
             request_confirm("Update Tailscale binary to latest version?",
@@ -557,7 +566,11 @@ static void handle_config_key(struct tb_event *ev) {
             trigger_config_action(g_app.config_selected_idx);
         }
     } else if (ev->ch == ' ') {
-        trigger_config_action(g_app.config_selected_idx);
+        if (g_app.config_selected_idx == 10) {
+            cycle_schedule();
+        } else {
+            trigger_config_action(g_app.config_selected_idx);
+        }
     } else if (ev->ch == '1') {
         s_config_pending_digit = 1;
         s_config_digit_time = time(NULL);
@@ -866,6 +879,51 @@ static void save_input_action(void) {
         save_config();
         log_event("INFO", "Custom Tailscale flags updated to: %s", g_app.config.customparams);
         show_toast("Custom Flags updated: %s", g_app.config.customparams);
+    } else if (g_app.input_target == INPUT_SCHEDULE) {
+        char val[32];
+        strncpy(val, g_app.input_buf, sizeof(val) - 1);
+        val[sizeof(val) - 1] = '\0';
+        char *p = val;
+        while (*p == ' ' || *p == '\t') p++;
+        size_t l = strlen(p);
+        while (l > 0 && (p[l - 1] == ' ' || p[l - 1] == '\t' || p[l - 1] == '\r' || p[l - 1] == '\n')) p[--l] = '\0';
+
+        if (strcasecmp(p, "off") == 0 || strcasecmp(p, "disable") == 0 || strcasecmp(p, "disabled") == 0 || strcmp(p, "0") == 0 || strcmp(p, "none") == 0) {
+            g_app.config.schedule = 0;
+            if (!g_app.mock_mode) {
+                system("cru d zeroscale_autoupdate >/dev/null 2>&1");
+            }
+            save_config();
+            log_event("INFO", "Auto-update schedule disabled.");
+            show_toast("Auto-Update Schedule: Disabled");
+        } else {
+            int h = 1, m = 0;
+            if (strchr(p, ':')) {
+                if (sscanf(p, "%d:%d", &h, &m) < 1) {
+                    show_toast("Invalid time format (use HH:MM, e.g. 03:30)");
+                    return;
+                }
+            } else {
+                h = atoi(p);
+                m = 0;
+            }
+            if (h < 0 || h > 23 || m < 0 || m > 59) {
+                show_toast("Invalid time (Hours: 0-23, Minutes: 0-59)");
+                return;
+            }
+            g_app.config.schedule = 1;
+            g_app.config.schedulehrs = h;
+            g_app.config.schedulemin = m;
+            if (!g_app.mock_mode) {
+                char cmd[256];
+                snprintf(cmd, sizeof(cmd), "cru a zeroscale_autoupdate '%d %d * * * /jffs/scripts/zeroscale --check-update >/dev/null 2>&1' >/dev/null 2>&1", m, h);
+                system(cmd);
+            }
+            save_config();
+            log_event("INFO", "Auto-update scheduled for %02d:%02d.", h, m);
+            show_toast("Auto-Update scheduled @ %02d:%02d", h, m);
+        }
+        tb_invalidate();
     }
     g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
 }

@@ -525,16 +525,27 @@ void cycle_amtm_email(void) {
 
 void cycle_schedule(void) {
     g_app.config.schedule = !g_app.config.schedule;
+    if (g_app.config.schedule && g_app.config.schedulehrs == 0 && g_app.config.schedulemin == 0) {
+        g_app.config.schedulehrs = 1;
+        g_app.config.schedulemin = 0;
+    }
     if (!g_app.mock_mode) {
         if (g_app.config.schedule) {
-            system("cru a zeroscale_autoupdate '0 1 * * * /jffs/scripts/zeroscale --check-update >/dev/null 2>&1' >/dev/null 2>&1");
+            char cmd[256];
+            snprintf(cmd, sizeof(cmd), "cru a zeroscale_autoupdate '%d %d * * * /jffs/scripts/zeroscale --check-update >/dev/null 2>&1' >/dev/null 2>&1",
+                     g_app.config.schedulemin, g_app.config.schedulehrs);
+            system(cmd);
         } else {
             system("cru d zeroscale_autoupdate >/dev/null 2>&1");
         }
     }
     save_config();
-    log_event("INFO", "Autoupdate schedule %s.", g_app.config.schedule ? "enabled @ 01:00" : "disabled");
-    show_toast("Autoupdate Schedule: %s", g_app.config.schedule ? "Enabled @ 01:00" : "Disabled");
+    log_event("INFO", "Autoupdate schedule %s.", g_app.config.schedule ? "enabled" : "disabled");
+    if (g_app.config.schedule) {
+        show_toast("Auto-Update: Enabled @ %02d:%02d", g_app.config.schedulehrs, g_app.config.schedulemin);
+    } else {
+        show_toast("Auto-Update: Disabled");
+    }
     tb_invalidate();
 }
 
