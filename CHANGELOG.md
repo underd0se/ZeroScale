@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.4] - 2026-09-01
+
+### 🚦 Email Rate Limiting & Clean Process Uninstaller
+
+ZeroScale `v0.3.4` introduces hourly rate-limiting protection for automated amtm notifications, interactive email rate limit adjustment, `--reset` flag control for persistent settings, and graceful full-screen uninstaller process termination.
+
+#### 🌟 Added & Enhanced
+* **🚦 Automated amtm Email Rate-Limiting Protection (Option 10):**
+  * Added 1-hour rolling window rate limiting to prevent SMTP mail storms during intermittent daemon crash-loops.
+  * Throttles automated alert emails to the configured threshold (default `5/hour`, adjustable from `1` to `24/hour`).
+* **⚙️ Interactive Rate Limit Editor (Option 10):**
+  * Pressing `Enter` on Option 10 opens an interactive input modal to adjust the max hourly alert email rate, while `Space` cycles through alert modes (`Disabled ➔ Failures ➔ Success ➔ All`).
+* **🔄 State Reset Flag Integration (Option 2):**
+  * When Persistent Settings is disabled (`persistentsettings=0`), `tailscale up` automatically appends `--reset` to prevent inheriting legacy routing state.
+* **🧹 Graceful TUI Uninstallation (Option 16):**
+  * Selecting Uninstall safely invokes the internal uninstaller routine with full-screen splash feedback, clean Termbox terminal state restoration (`tb_shutdown()`), post-mount script cleanup, and graceful exit.
+
+---
+
 ## [0.3.3] - 2026-09-01
 
 ### 🛡️ Full Backend Hardening: Watchdog Auto-Recovery, Headless Cron, & amtm Dispatcher

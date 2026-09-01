@@ -484,7 +484,18 @@ static void trigger_config_action(int idx) {
             request_input(INPUT_LOGSIZE, "Event Log Retention", "Enter max log rows (100-9999, 0=Disable)", buf);
             break;
         }
-        case 9: cycle_amtm_email(); break;
+        case 9: {
+            if (!is_amtm_email_configured()) {
+                cycle_amtm_email();
+            } else if (!g_app.config.amtmemailsuccess && !g_app.config.amtmemailfailure) {
+                cycle_amtm_email();
+            } else {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%d", g_app.config.ratelimit > 0 ? g_app.config.ratelimit : 5);
+                request_input(INPUT_RATELIMIT, "amtm Email Rate Limit", "Enter max alert emails per hour (1-24):", buf);
+            }
+            break;
+        }
         case 10: {
             if (!g_app.config.schedule) {
                 cycle_schedule();
@@ -514,7 +525,7 @@ static void trigger_config_action(int idx) {
         case 15:
             request_confirm("Completely uninstall ZeroScale from router?",
                             "Uninstall",
-                            "killall -9 zeroscale 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale /opt/bin/zeroscale");
+                            "INTERNAL_UNINSTALL");
             break;
         default: break;
     }
@@ -569,7 +580,9 @@ static void handle_config_key(struct tb_event *ev) {
             trigger_config_action(g_app.config_selected_idx);
         }
     } else if (ev->ch == ' ') {
-        if (g_app.config_selected_idx == 10) {
+        if (g_app.config_selected_idx == 9) {
+            cycle_amtm_email();
+        } else if (g_app.config_selected_idx == 10) {
             cycle_schedule();
         } else {
             trigger_config_action(g_app.config_selected_idx);
@@ -927,6 +940,15 @@ static void save_input_action(void) {
             show_toast("Auto-Update scheduled @ %02d:%02d", h, m);
         }
         tb_invalidate();
+    } else if (g_app.input_target == INPUT_RATELIMIT) {
+        int rate = atoi(g_app.input_buf);
+        if (rate < 1) rate = 1;
+        if (rate > 24) rate = 24;
+        g_app.config.ratelimit = rate;
+        save_config();
+        log_event("INFO", "amtm email rate limit updated to %d/hour.", rate);
+        show_toast("amtm Rate Limit: %d emails/hour", rate);
+        tb_invalidate();
     }
     g_app.mode = (g_app.prev_mode == VIEW_CONFIG) ? VIEW_CONFIG : VIEW_DASHBOARD;
 }
@@ -1034,6 +1056,10 @@ static void handle_input_mouse(struct tb_event *ev) {
 // View: Confirm Dialog Handlers
 
 static void execute_confirm_action(void) {
+    if (strcmp(g_app.confirm_cmd, "INTERNAL_UNINSTALL") == 0) {
+        uninstall_zeroscale();
+        return;
+    }
     char buf[512];
     snprintf(buf, sizeof(buf), "( %s ) >/dev/null 2>&1 &", g_app.confirm_cmd);
     system(buf);
@@ -1141,7 +1167,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.3.3\n");
+            printf("ZeroScale v0.3.4\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -c, --check-update Run headless background update check (crontab mode)\n");

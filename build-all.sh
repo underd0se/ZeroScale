@@ -3,7 +3,7 @@ set -euo pipefail
 
 mkdir -p bin/release
 
-VERSION="0.3.3"
+VERSION="0.3.4"
 
 echo "=========================================================="
 echo "  Building ZeroScale v${VERSION} for Asuswrt-Merlin"

@@ -77,7 +77,7 @@ static void extract_peer_metrics(const char *status, char *tx_out, size_t tx_sz,
 
 void load_mock_data(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.3");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.4");
     snprintf(cfg->tsver, sizeof(cfg->tsver), "1.102.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Kernel");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
@@ -318,7 +318,7 @@ static void get_router_lan_subnet(char *dest, size_t maxlen) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.3");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.4");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
     cfg->timerloop = 60;
@@ -820,6 +820,10 @@ void build_tailscale_up_cmd(char *buf, size_t maxlen) {
         strncat(cmd, " --advertise-routes=\"\"", sizeof(cmd) - strlen(cmd) - 1);
     }
 
+    if (!cfg->persistentsettings) {
+        strncat(cmd, " --reset", sizeof(cmd) - strlen(cmd) - 1);
+    }
+
     if (strlen(cfg->customparams) > 0) {
         strncat(cmd, " ", sizeof(cmd) - strlen(cmd) - 1);
         strncat(cmd, cfg->customparams, sizeof(cmd) - strlen(cmd) - 1);
@@ -828,12 +832,27 @@ void build_tailscale_up_cmd(char *buf, size_t maxlen) {
     snprintf(buf, maxlen, "%s", cmd);
 }
 
+static time_t s_email_window_start = 0;
+static int s_emails_sent_this_hour = 0;
+
 int send_amtm_email(const char *subject, const char *body) {
     if (g_app.mock_mode) {
         log_event("INFO", "amtm Email sent (Mock): [%s] %s", subject, body);
         return 1;
     }
     if (!is_amtm_email_configured()) return 0;
+
+    time_t now = time(NULL);
+    if (s_email_window_start == 0 || (now - s_email_window_start >= 3600)) {
+        s_email_window_start = now;
+        s_emails_sent_this_hour = 0;
+    }
+
+    int limit = (g_app.config.ratelimit > 0) ? g_app.config.ratelimit : 5;
+    if (s_emails_sent_this_hour >= limit) {
+        log_event("WARN", "amtm email throttled: limit of %d/hour reached.", limit);
+        return 0;
+    }
 
     FILE *f = popen("sh", "w");
     if (!f) return 0;
@@ -853,6 +872,7 @@ int send_amtm_email(const char *subject, const char *body) {
 
     int res = pclose(f);
     if (res == 0) {
+        s_emails_sent_this_hour++;
         log_event("INFO", "amtm email sent successfully: %s", subject);
         return 1;
     } else {
