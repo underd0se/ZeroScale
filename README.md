@@ -66,7 +66,7 @@ Consolidated, interactive settings management with instant persistence to `/jffs
 * **Section 1: Daemon & Health Monitor** — Toggle Watchdog Keepalive, Persistent Settings, and Boot Autostart (`/jffs/scripts/post-mount`).
 * **Section 2: Tailscale Routing & Mode** — Toggle `Userspace` ⟷ `Kernel` mode, Exit Node advertisement, Subnet Routes advertisement, and interactive Subnet CIDR editor.
 * **Section 3: Interface & Logging** — Cycle status check intervals (`10s` ➔ `300s`) and edit Event Log row retention limits.
-* **Section 4: Notifications & Automation** — Configure AMTM email alerts and scheduled daily autoupdates.
+* **Section 4: Notifications & Automation** — Configure amtm email alerts and scheduled daily autoupdates.
 * **Section 5: Binary & Maintenance** — Check & update Tailscale binaries, reset daemon state, and run safe install/reinstall/uninstall workflows.
 
 ### 4. 📜 Full-Screen Event Log Viewer (`VIEW_LOGS`)

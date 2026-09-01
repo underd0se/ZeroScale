@@ -571,8 +571,9 @@ static void draw_unified_config_view(void) {
 
         tb_printf(right_x, 5, (cur == 9) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 9) ? "▶" : " ");
         tb_printf(right_x + 2, 5, TB_GREEN | TB_BOLD, 0, "(10)");
-        tb_printf(right_x + 6, 5, TB_WHITE, 0, " AMTM Alerts    : ");
-        if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(right_vcol, 5, TB_HI_BLACK, 0, "Disabled");
+        tb_printf(right_x + 6, 5, TB_WHITE, 0, " amtm Alerts    : ");
+        if (!is_amtm_email_configured()) tb_printf(right_vcol, 5, TB_HI_BLACK, 0, "Unconfigured (amtm em)");
+        else if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(right_vcol, 5, TB_HI_BLACK, 0, "Disabled");
         else if (!cfg->amtmemailsuccess && cfg->amtmemailfailure) tb_printf(right_vcol, 5, TB_GREEN | TB_BOLD, 0, "Failures (%d/h)", cfg->ratelimit);
         else if (cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(right_vcol, 5, TB_GREEN | TB_BOLD, 0, "Success (%d/h)", cfg->ratelimit);
         else tb_printf(right_vcol, 5, TB_GREEN | TB_BOLD, 0, "All (%d/h)", cfg->ratelimit);
@@ -700,8 +701,9 @@ static void draw_unified_config_view(void) {
                     else tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "%d rows", cfg->logsize);
                     break;
                 case 9:
-                    tb_printf(label_x, y, TB_WHITE, 0, "AMTM Alerts      : ");
-                    if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    tb_printf(label_x, y, TB_WHITE, 0, "amtm Alerts      : ");
+                    if (!is_amtm_email_configured()) tb_printf(vcol, y, TB_HI_BLACK, 0, "Unconfigured (amtm em)");
+                    else if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
                     else if (!cfg->amtmemailsuccess && cfg->amtmemailfailure) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Failures");
                     else if (cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Success");
                     else tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "All Alerts");

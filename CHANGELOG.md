@@ -145,7 +145,7 @@ ZeroScale `v0.2.3` introduces interactive Custom operating mode management, in-l
   * Integrated Termbox buffer invalidation (`tb_invalidate()`) on action executions to force clean hardware repaints.
   * Added global screen repaint hotkey: press `Ctrl+L` or `Ctrl+R` to force an immediate full-screen redraw anywhere in the app.
 * **Global `e` / `E` Exit Key:**
-  * Added `e` / `E` as a universal exit and cancel key across all menus and modals (matching AMTM standards).
+  * Added `e` / `E` as a universal exit and cancel key across all menus and modals (matching amtm standards).
 
 ---
 
@@ -237,7 +237,7 @@ ZeroScale `v0.1.0` is the first native C99 implementation of the ZeroScale Tails
   * Real-time network telemetry: IP address, OS platform, owner, direct/relay endpoint details, and status.
   * In-modal live ICMP ping (`p`) and WireGuard latency ping (`t`).
 * **Unified Configuration & Service Management (`VIEW_CONFIG`):**
-  * Consolidated Daemon monitor, Tailscale Routing, Logging, AMTM email alerts, and Cron Autoupdate into a single 5-section menu.
+  * Consolidated Daemon monitor, Tailscale Routing, Logging, amtm email alerts, and Cron Autoupdate into a single 5-section menu.
   * Instant configuration persistence to `/jffs/addons/zeroscale.d/zeroscale.cfg`.
   * Built-in Subnet Route CIDR editor modal.
   * Built-in Tailscale service installation and uninstallation workflows.

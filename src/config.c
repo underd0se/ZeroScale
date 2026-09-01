@@ -89,7 +89,7 @@ void load_mock_data(void) {
     cfg->autostart = 1;
     cfg->logsize = 2000;
     cfg->amtmemailsuccess = 0;
-    cfg->amtmemailfailure = 1;
+    cfg->amtmemailfailure = 0;
     cfg->ratelimit = 5;
     cfg->schedule = 1;
     cfg->schedulehrs = 1;
@@ -329,7 +329,7 @@ void load_config(void) {
     cfg->autostart = 1;
     cfg->logsize = 2000;
     cfg->amtmemailsuccess = 0;
-    cfg->amtmemailfailure = 1;
+    cfg->amtmemailfailure = 0;
     cfg->ratelimit = 5;
     cfg->schedule = 1;
     cfg->schedulehrs = 1;
@@ -498,29 +498,47 @@ void cycle_timerloop(void) {
     step_timerloop(1);
 }
 
+int is_amtm_email_configured(void) {
+    if (g_app.mock_mode) {
+        return 1;
+    }
+    return (access("/jffs/addons/amtm/mail/email.conf", F_OK) == 0 &&
+            access("/jffs/addons/amtm/mail/emailpw.enc", F_OK) == 0);
+}
+
 void cycle_amtm_email(void) {
+    if (!is_amtm_email_configured()) {
+        g_app.config.amtmemailsuccess = 0;
+        g_app.config.amtmemailfailure = 0;
+        save_config();
+        show_toast("amtm email not set up. Run 'em' in amtm first.");
+        tb_invalidate();
+        return;
+    }
+
     int s = g_app.config.amtmemailsuccess;
     int f = g_app.config.amtmemailfailure;
 
     if (!s && !f) {
         g_app.config.amtmemailsuccess = 0;
         g_app.config.amtmemailfailure = 1;
-        show_toast("Email Alerts: Failures only");
+        show_toast("amtm Email Alerts: Failures only");
     } else if (!s && f) {
         g_app.config.amtmemailsuccess = 1;
         g_app.config.amtmemailfailure = 0;
-        show_toast("Email Alerts: Success only");
+        show_toast("amtm Email Alerts: Success only");
     } else if (s && !f) {
         g_app.config.amtmemailsuccess = 1;
         g_app.config.amtmemailfailure = 1;
-        show_toast("Email Alerts: Success & Failures");
+        show_toast("amtm Email Alerts: Success & Failures");
     } else {
         g_app.config.amtmemailsuccess = 0;
         g_app.config.amtmemailfailure = 0;
-        show_toast("Email Alerts: Disabled");
+        show_toast("amtm Email Alerts: Disabled");
     }
     save_config();
-    log_event("INFO", "AMTM Email alert configuration updated.");
+    log_event("INFO", "amtm email alert configuration updated.");
+    tb_invalidate();
 }
 
 void cycle_schedule(void) {
