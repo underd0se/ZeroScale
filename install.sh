@@ -9,7 +9,7 @@ set -e
 export PATH="/opt/bin:/opt/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PATH:-}"
 
 REPO_RAW_URL="https://raw.githubusercontent.com/underd0se/ZeroScale/main"
-VERSION="v0.3.2"
+VERSION="v0.3.3"
 INSTALL_DIR="/jffs/scripts"
 TARGET_BIN="${INSTALL_DIR}/zeroscale"
 CONFIG_DIR="/jffs/addons/zeroscale.d"

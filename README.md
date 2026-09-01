@@ -127,16 +127,18 @@ cd ZeroScale
 | **Dashboard** | `u` / `d` | Quick direct shortcut for Tailscale `up` / `down` |
 | **Dashboard** | `r` / `s` / `t` | Quick direct shortcut for daemon restart / start / stop |
 | **Dashboard** | `c` / `l` / `q` | Open Configuration / Logs / Quit |
-| **Config Menu** | `↑` / `↓` | Navigate through all 14 configuration items |
-| **Config Menu** | `Enter` / `Space` | Toggle setting / Open Subnet CIDR editor / Open Log retention editor |
-| **Config Menu** | `Esc` / `q` | Return to Dashboard |
+| **Config Menu** | `↑` / `↓` / `←` / `→` | Navigate through all 16 configuration items in 2-column layout |
+| **Config Menu** | `Enter` / `Space` | Toggle setting / Open Subnet CIDR editor / Edit Log retention / Edit Auto-Update Time |
+| **Config Menu** | `1`–`9`, `t`, `u`, `x`, `i` | Direct jump and toggle hotkeys |
+| **Config Menu** | `Esc` / `e` / `q` | Return to Dashboard |
 | **Modals & Dialogs** | `←` / `→` / `Tab` | Switch between Action and Cancel buttons |
 | **Modals & Dialogs** | `Enter` / `Space` | Execute focused modal action |
-| **Modals & Dialogs** | `Esc` / `c` / `q` | Cancel modal and return cleanly |
+| **Modals & Dialogs** | `Esc` / `e` / `c` / `q` | Cancel modal and return cleanly |
 | **Input Modals** | `Tab` / `↓` / `↑` | Move focus between Text Input field and Save/Cancel buttons |
-| **Peer Inspector** | `p` / `t` / `c` | Live ICMP Ping / Tailscale WireGuard Ping / Close modal |
+| **Peer Inspector** | `p` / `t` / `c` / `e` | Live ICMP Ping / Tailscale WireGuard Ping / Close modal |
 | **Log Viewer** | `↑` / `↓` / `PgUp` / `PgDn` | Scroll log viewer |
-| **Log Viewer** | `g` / `G` / `r` | Jump to Top / Bottom / Refresh logs |
+| **Log Viewer** | `/` / `n` / `N` | Real-time substring search through event logs |
+| **Log Viewer** | `g` / `G` / `r` / `e` | Jump to Top / Bottom / Refresh logs / Exit |
 
 ---
 

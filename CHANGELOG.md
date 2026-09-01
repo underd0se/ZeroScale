@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.3] - 2026-09-01
+
+### 🛡️ Full Backend Hardening: Watchdog Auto-Recovery, Headless Cron, & amtm Dispatcher
+
+ZeroScale `v0.3.3` hardens all underlying backend mechanisms across the configuration system, ensuring every feature is fully-baked from UI down to hardware execution.
+
+#### 🌟 Added & Enhanced
+* **🛡️ Active Watchdog Auto-Recovery (Option 1):**
+  * When Watchdog Keepalive is enabled (`keepalive=1`), ZeroScale detects if the Tailscale daemon (`/opt/etc/init.d/S06tailscaled`) is dead or stopped and immediately executes an automated background recovery (`S06tailscaled start`).
+  * Logs recovery events to `zeroscale.log`, flashes a screen toast alert, and sends an amtm notification email if configured.
+* **🚀 Dynamic `tailscale up` Command Compilation (Options 2, 4, 5, 6, 7):**
+  * Pressing `u` (or `Up` on the action bar) now dynamically compiles all active settings into the `tailscale up` invocation, including `--advertise-exit-node`, `--advertise-routes=<routes>`, `--tun=userspace-networking`, and `customparams`.
+* **⏰ Headless Cron CLI Mode (`--check-update` / `-c`) (Option 11):**
+  * Added non-interactive headless CLI execution mode for crontab updates. Nightly cron tasks run silently, check and update both Tailscale and ZeroScale binaries based on the active release track, log progress to `zeroscale.log`, and send amtm email notifications.
+* **📬 Live amtm Email Detection & Encrypted Dispatcher (Option 10):**
+  * Added live detection for `/jffs/addons/amtm/mail/email.conf` and `emailpw.enc` with clean `Unconfigured (amtm em)` display state.
+  * Implemented automated email delivery using Asuswrt-Merlin's standard encrypted SMTP curl transport for watchdog recoveries and auto-update reports.
+* **⏰ Interactive Auto-Update Schedule Time Editor (Option 11):**
+  * Pressing `Enter` on Option 11 opens an interactive modal to configure custom 24-hour execution times (`HH:MM`), syncing directly with `cru`.
+
+---
+
 ## [0.3.2] - 2026-09-01
 
 ### 🏛️ 2-Column Adaptive Configuration System & Hardware Automation

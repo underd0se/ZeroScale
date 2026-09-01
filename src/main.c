@@ -217,9 +217,12 @@ static void trigger_header_action(int idx) {
     g_app.dash_focus = FOCUS_HEADER_MENU;
     g_app.header_selected_idx = idx;
     switch (idx) {
-        case 0: // Up
-            execute_action("Connecting Tailscale (tailscale up)...", "tailscale up");
+        case 0: { // Up
+            char cmd[512];
+            build_tailscale_up_cmd(cmd, sizeof(cmd));
+            execute_action("Connecting Tailscale (tailscale up)...", cmd);
             break;
+        }
         case 1: // Down
             request_confirm("Disconnect from Tailnet?", "Disconnect", "tailscale down");
             break;
@@ -1129,6 +1132,8 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         if (strcmp(argv[1], "--mock") == 0 || strcmp(argv[1], "-m") == 0) {
             g_app.mock_mode = 1;
+        } else if (strcmp(argv[1], "--check-update") == 0 || strcmp(argv[1], "-c") == 0) {
+            return run_headless_update();
         } else if (strcmp(argv[1], "--install") == 0 || strcmp(argv[1], "-i") == 0) {
             install_zeroscale();
             return 0;
@@ -1136,9 +1141,10 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.3.2\n");
+            printf("ZeroScale v0.3.3\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
+            printf("  -c, --check-update Run headless background update check (crontab mode)\n");
             printf("  -m, --mock         Run in local desktop simulation mode with synthetic data\n");
             printf("  -i, --install      Install Entware Tailscale and ZeroScale services\n");
             printf("  -u, --uninstall    Uninstall ZeroScale and cleanup crontab/init entries\n");

@@ -77,7 +77,7 @@ static void extract_peer_metrics(const char *status, char *tx_out, size_t tx_sz,
 
 void load_mock_data(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.2");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.3");
     snprintf(cfg->tsver, sizeof(cfg->tsver), "1.102.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Kernel");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
@@ -318,7 +318,7 @@ static void get_router_lan_subnet(char *dest, size_t maxlen) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.2");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.3");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
     cfg->timerloop = 60;
@@ -605,6 +605,30 @@ void refresh_tailscale_status(void) {
     int res = system("/opt/etc/init.d/S06tailscaled check >/dev/null 2>&1");
     cfg->daemon_running = (res == 0);
 
+    // Watchdog auto-restart if keepalive is active
+    if (cfg->keepalive && !cfg->daemon_running) {
+        log_event("WARN", "Watchdog: Tailscale daemon was down. Automatically restarting service...");
+        system("/opt/etc/init.d/S06tailscaled start >/dev/null 2>&1");
+        res = system("/opt/etc/init.d/S06tailscaled check >/dev/null 2>&1");
+        cfg->daemon_running = (res == 0);
+        if (cfg->daemon_running) {
+            log_event("INFO", "Watchdog: Tailscale daemon successfully recovered.");
+            show_toast("⚡ Watchdog: Recovered Tailscale daemon!");
+            if (cfg->amtmemailfailure && is_amtm_email_configured()) {
+                send_amtm_email("ZeroScale Watchdog: Daemon Recovered",
+                                "ZeroScale Watchdog detected that Tailscale daemon was down on your router and successfully recovered it.");
+            }
+        } else {
+            log_event("ERROR", "Watchdog: Failed to restart Tailscale daemon.");
+            show_toast("⚠ Watchdog: Failed to restart daemon!");
+            if (cfg->amtmemailfailure && is_amtm_email_configured()) {
+                send_amtm_email("ZeroScale Watchdog: Daemon Recovery Failed",
+                                "ZeroScale Watchdog attempted to restart the Tailscale daemon on your router but it failed to start.");
+            }
+        }
+        tb_invalidate();
+    }
+
     // Check tailscale version
     FILE *f = popen("tailscale version 2>/dev/null | awk 'NR==1 {print $1}'", "r");
     if (f) {
@@ -771,4 +795,106 @@ void load_logs(void) {
     } else {
         g_app.log_scroll = 0;
     }
+}
+
+void build_tailscale_up_cmd(char *buf, size_t maxlen) {
+    AppConfig *cfg = &g_app.config;
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd), "tailscale up");
+
+    if (strcasecmp(cfg->opmode, "Userspace") == 0) {
+        strncat(cmd, " --tun=userspace-networking", sizeof(cmd) - strlen(cmd) - 1);
+    }
+
+    if (cfg->exitnode) {
+        strncat(cmd, " --advertise-exit-node", sizeof(cmd) - strlen(cmd) - 1);
+    } else {
+        strncat(cmd, " --advertise-exit-node=false", sizeof(cmd) - strlen(cmd) - 1);
+    }
+
+    if (cfg->advroutes && strlen(cfg->routes) > 0) {
+        char route_flag[160];
+        snprintf(route_flag, sizeof(route_flag), " --advertise-routes=%s", cfg->routes);
+        strncat(cmd, route_flag, sizeof(cmd) - strlen(cmd) - 1);
+    } else {
+        strncat(cmd, " --advertise-routes=\"\"", sizeof(cmd) - strlen(cmd) - 1);
+    }
+
+    if (strlen(cfg->customparams) > 0) {
+        strncat(cmd, " ", sizeof(cmd) - strlen(cmd) - 1);
+        strncat(cmd, cfg->customparams, sizeof(cmd) - strlen(cmd) - 1);
+    }
+
+    snprintf(buf, maxlen, "%s", cmd);
+}
+
+int send_amtm_email(const char *subject, const char *body) {
+    if (g_app.mock_mode) {
+        log_event("INFO", "amtm Email sent (Mock): [%s] %s", subject, body);
+        return 1;
+    }
+    if (!is_amtm_email_configured()) return 0;
+
+    FILE *f = popen("sh", "w");
+    if (!f) return 0;
+
+    fprintf(f, "EMAIL_DIR=/jffs/addons/amtm/mail\n");
+    fprintf(f, "[ -f \"$EMAIL_DIR/email.conf\" ] && . \"$EMAIL_DIR/email.conf\"\n");
+    fprintf(f, "if [ -n \"$FROM_ADDRESS\" ] && [ -n \"$TO_ADDRESS\" ] && [ -n \"$SMTP\" ]; then\n");
+    fprintf(f, "  TMPFILE=$(mktemp /tmp/amtm-mail.XXXXXX 2>/dev/null || echo /tmp/amtm-mail.$$$$)\n");
+    fprintf(f, "  printf 'Subject: %%s\\nFrom: \"amtm\" <%%s>\\nTo: %%s\\n\\n%%s\\n' \"%s\" \"$FROM_ADDRESS\" \"$TO_ADDRESS\" \"%s\" > \"$TMPFILE\"\n", subject, body);
+    fprintf(f, "  PASS=$(/usr/sbin/openssl aes-256-cbc -d -in \"$EMAIL_DIR/emailpw.enc\" -pass pass:ditbabot,isoi 2>/dev/null)\n");
+    fprintf(f, "  /usr/sbin/curl --silent --url \"$PROTOCOL://$SMTP:$PORT/$SMTP\" --mail-from \"$FROM_ADDRESS\" --mail-rcpt \"$TO_ADDRESS\" --upload-file \"$TMPFILE\" --ssl-reqd --crlf --user \"$USERNAME:$PASS\" >/dev/null 2>&1\n");
+    fprintf(f, "  RES=$?\n");
+    fprintf(f, "  rm -f \"$TMPFILE\"\n");
+    fprintf(f, "  exit $RES\n");
+    fprintf(f, "fi\n");
+    fprintf(f, "exit 1\n");
+
+    int res = pclose(f);
+    if (res == 0) {
+        log_event("INFO", "amtm email sent successfully: %s", subject);
+        return 1;
+    } else {
+        log_event("WARN", "amtm email delivery failed: %s", subject);
+        return 0;
+    }
+}
+
+int run_headless_update(void) {
+    load_config();
+    AppConfig *cfg = &g_app.config;
+    log_event("INFO", "Running scheduled background update check (Track: %s)...", cfg->track ? "Beta" : "Stable");
+
+    // 1. Check and update Tailscale binary via opkg / tailscale update
+    int ts_res = system("/opt/bin/opkg update >/dev/null 2>&1 && /opt/bin/opkg upgrade tailscale >/dev/null 2>&1 || tailscale update --yes >/dev/null 2>&1");
+    if (ts_res == 0) {
+        system("/opt/etc/init.d/S06tailscaled restart >/dev/null 2>&1");
+        log_event("INFO", "Tailscale binary checked/updated successfully.");
+    }
+
+    // 2. Check and update ZeroScale binary from GitHub
+    const char *branch = cfg->track ? "beta" : "main";
+    char upd_cmd[512];
+    snprintf(upd_cmd, sizeof(upd_cmd),
+             "curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/%s/install.sh | sh -s -- --silent >/dev/null 2>&1",
+             branch);
+    int zs_res = system(upd_cmd);
+
+    if (zs_res == 0) {
+        log_event("INFO", "ZeroScale scheduled update completed successfully.");
+        if (cfg->amtmemailsuccess && is_amtm_email_configured()) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "ZeroScale scheduled background update ran successfully on track '%s'.", cfg->track ? "Beta" : "Stable");
+            send_amtm_email("ZeroScale Auto-Update Success", msg);
+        }
+    } else {
+        log_event("ERROR", "ZeroScale scheduled update encountered an error.");
+        if (cfg->amtmemailfailure && is_amtm_email_configured()) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "ZeroScale scheduled background update failed on track '%s'.", cfg->track ? "Beta" : "Stable");
+            send_amtm_email("ZeroScale Auto-Update Failure", msg);
+        }
+    }
+    return (zs_res == 0) ? 0 : 1;
 }
