@@ -483,22 +483,23 @@ static void trigger_config_action(int idx) {
         }
         case 9: cycle_amtm_email(); break;
         case 10: cycle_schedule(); break;
-        case 11:
+        case 11: switch_track(); break;
+        case 12:
             request_confirm("Update Tailscale binary to latest version?",
                             "Update",
                             "/opt/bin/opkg update && /opt/bin/opkg upgrade tailscale || tailscale update --yes; /opt/etc/init.d/S06tailscaled restart");
             break;
-        case 12:
+        case 13:
             request_confirm("Reset daemon state and re-authenticate?",
                             "Reset State",
                             "/opt/etc/init.d/S06tailscaled stop; rm -f /opt/var/tailscaled.state; /opt/etc/init.d/S06tailscaled start");
             break;
-        case 13:
+        case 14:
             request_confirm("Reinstall Entware Tailscale package?",
                             "Reinstall",
                             "/opt/etc/init.d/S06tailscaled stop 2>/dev/null; /opt/bin/opkg update; /opt/bin/opkg install --force-reinstall tailscale; /opt/etc/init.d/S06tailscaled start");
             break;
-        case 14:
+        case 15:
             request_confirm("Completely uninstall ZeroScale from router?",
                             "Uninstall",
                             "killall -9 zeroscale 2>/dev/null; /opt/etc/init.d/S06tailscaled stop; sed -i -e '/zeroscale/d' /jffs/scripts/post-mount 2>/dev/null; cru d zeroscale_autoupdate 2>/dev/null; rm -rf /jffs/addons/zeroscale.d /jffs/scripts/zeroscale /opt/bin/zeroscale");
@@ -517,11 +518,14 @@ static void handle_config_key(struct tb_event *ev) {
         return;
     }
 
+    int width = tb_width();
+    int is_2col = (width >= 86);
+
     if (s_config_pending_digit == 1) {
         s_config_pending_digit = 0;
-        if (ev->ch >= '0' && ev->ch <= '5') {
+        if (ev->ch >= '0' && ev->ch <= '6') {
             int num = 10 + (ev->ch - '0');
-            if (num >= 10 && num <= 15) {
+            if (num >= 10 && num <= 16) {
                 trigger_config_action(num - 1);
                 return;
             }
@@ -534,9 +538,18 @@ static void handle_config_key(struct tb_event *ev) {
     }
 
     if (ev->key == TB_KEY_ARROW_DOWN) {
-        if (g_app.config_selected_idx < 14) g_app.config_selected_idx++;
+        if (g_app.config_selected_idx < 15) g_app.config_selected_idx++;
     } else if (ev->key == TB_KEY_ARROW_UP) {
         if (g_app.config_selected_idx > 0) g_app.config_selected_idx--;
+    } else if (is_2col && ev->key == TB_KEY_ARROW_RIGHT) {
+        if (g_app.config_selected_idx < 9) {
+            g_app.config_selected_idx += 9;
+            if (g_app.config_selected_idx > 15) g_app.config_selected_idx = 15;
+        }
+    } else if (is_2col && ev->key == TB_KEY_ARROW_LEFT) {
+        if (g_app.config_selected_idx >= 9) {
+            g_app.config_selected_idx -= 9;
+        }
     } else if (ev->key == TB_KEY_ENTER) {
         if (g_app.config_selected_idx == 3 && strcasecmp(g_app.config.opmode, "Custom") == 0) {
             request_input(INPUT_CUSTOMPARAMS, "Custom Tailscale Flags", "Enter custom tailscale up flags (e.g. --accept-routes)", g_app.config.customparams);
@@ -549,7 +562,7 @@ static void handle_config_key(struct tb_event *ev) {
         s_config_pending_digit = 1;
         s_config_digit_time = time(NULL);
         g_app.config_selected_idx = 0;
-        show_toast("Option (1)... [Press 0-5 for (10)-(15), or Enter for (1)]");
+        show_toast("Option (1)... [Press 0-6 for (10)-(16), or Enter for (1)]");
     } else if (ev->ch == '4') {
         if (strcasecmp(g_app.config.opmode, "Custom") == 0) {
             request_input(INPUT_CUSTOMPARAMS, "Custom Tailscale Flags", "Enter custom tailscale up flags (e.g. --accept-routes)", g_app.config.customparams);
@@ -558,34 +571,62 @@ static void handle_config_key(struct tb_event *ev) {
         }
     } else if (ev->ch >= '2' && ev->ch <= '9') {
         trigger_config_action(ev->ch - '1');
-    } else if (ev->ch == 'u' || ev->ch == 'U') {
+    } else if (ev->ch == 't' || ev->ch == 'T') {
         trigger_config_action(11);
-    } else if (ev->ch == 'x' || ev->ch == 'X') {
+    } else if (ev->ch == 'u' || ev->ch == 'U') {
         trigger_config_action(12);
-    } else if (ev->ch == 'i' || ev->ch == 'I') {
+    } else if (ev->ch == 'x' || ev->ch == 'X') {
         trigger_config_action(13);
+    } else if (ev->ch == 'i' || ev->ch == 'I') {
+        trigger_config_action(14);
     }
 }
 
 static void handle_config_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
-        switch (ev->y) {
-            case 5: trigger_config_action(0); break;
-            case 6: trigger_config_action(1); break;
-            case 7: trigger_config_action(2); break;
-            case 10: trigger_config_action(3); break;
-            case 11: trigger_config_action(4); break;
-            case 12: trigger_config_action(5); break;
-            case 13: trigger_config_action(6); break;
-            case 16: trigger_config_action(7); break;
-            case 17: trigger_config_action(8); break;
-            case 20: trigger_config_action(9); break;
-            case 21: trigger_config_action(10); break;
-            case 24: trigger_config_action(11); break;
-            case 25: trigger_config_action(12); break;
-            case 26: trigger_config_action(13); break;
-            case 27: trigger_config_action(14); break;
-            default: break;
+        int width = tb_width();
+        int height = tb_height();
+        if (width >= 86) {
+            // 2-Column Mode
+            if (ev->x < 47) {
+                // Left Column (Options 0..8)
+                switch (ev->y) {
+                    case 5: trigger_config_action(0); break;
+                    case 6: trigger_config_action(1); break;
+                    case 7: trigger_config_action(2); break;
+                    case 10: trigger_config_action(3); break;
+                    case 11: trigger_config_action(4); break;
+                    case 12: trigger_config_action(5); break;
+                    case 13: trigger_config_action(6); break;
+                    case 16: trigger_config_action(7); break;
+                    case 17: trigger_config_action(8); break;
+                    default: break;
+                }
+            } else {
+                // Right Column (Options 9..15)
+                switch (ev->y) {
+                    case 5: trigger_config_action(9); break;
+                    case 6: trigger_config_action(10); break;
+                    case 7: trigger_config_action(11); break;
+                    case 10: trigger_config_action(12); break;
+                    case 11: trigger_config_action(13); break;
+                    case 12: trigger_config_action(14); break;
+                    case 13: trigger_config_action(15); break;
+                    default: break;
+                }
+            }
+        } else {
+            // Single Column Scrolled Viewport
+            int max_visible = height - 9;
+            if (max_visible < 5) max_visible = 5;
+            if (max_visible > 16) max_visible = 16;
+
+            if (ev->y >= 5 && ev->y < 5 + max_visible) {
+                int clicked_idx = g_app.config_scroll + (ev->y - 5);
+                if (clicked_idx >= 0 && clicked_idx < 16) {
+                    trigger_config_action(clicked_idx);
+                }
+            }
         }
     }
 }
@@ -1037,7 +1078,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.3.1\n");
+            printf("ZeroScale v0.3.2\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -m, --mock         Run in local desktop simulation mode with synthetic data\n");

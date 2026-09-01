@@ -102,6 +102,7 @@ typedef struct {
     DashboardFocus dash_focus;
     int header_selected_idx;
     int config_selected_idx;
+    int config_scroll;
 
     // Peers Table
     PeerInfo peers[MAX_PEERS];

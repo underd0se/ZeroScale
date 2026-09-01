@@ -77,7 +77,7 @@ static void extract_peer_metrics(const char *status, char *tx_out, size_t tx_sz,
 
 void load_mock_data(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.1");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.2");
     snprintf(cfg->tsver, sizeof(cfg->tsver), "1.102.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Kernel");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
@@ -318,7 +318,7 @@ static void get_router_lan_subnet(char *dest, size_t maxlen) {
 
 void load_config(void) {
     AppConfig *cfg = &g_app.config;
-    snprintf(cfg->version, sizeof(cfg->version), "0.3.1");
+    snprintf(cfg->version, sizeof(cfg->version), "0.3.2");
     snprintf(cfg->opmode, sizeof(cfg->opmode), "Userspace");
     snprintf(cfg->customparams, sizeof(cfg->customparams), "--accept-routes --advertise-exit-node");
     cfg->timerloop = 60;
@@ -433,35 +433,37 @@ void toggle_persistentsettings(void) {
 void toggle_autostart(void) {
     g_app.config.autostart = !g_app.config.autostart;
     if (g_app.config.autostart) {
-        system("if [ -f /jffs/scripts/post-mount ]; then "
-               "  if ! grep -q 'S06tailscaled start' /jffs/scripts/post-mount; then "
-               "    echo '(sleep 30 && /opt/etc/init.d/S06tailscaled start) & # Added by ZeroScale' >> /jffs/scripts/post-mount; "
+        system("mkdir -p /jffs/scripts >/dev/null 2>&1; "
+               "if [ -f /jffs/scripts/post-mount ]; then "
+               "  if ! grep -q 'S06tailscaled start' /jffs/scripts/post-mount 2>/dev/null; then "
+               "    echo '(sleep 30 && /opt/etc/init.d/S06tailscaled start) & # Added by ZeroScale' >> /jffs/scripts/post-mount 2>/dev/null; "
                "  fi; "
                "else "
-               "  echo '#!/bin/sh' > /jffs/scripts/post-mount; "
-               "  echo '(sleep 30 && /opt/etc/init.d/S06tailscaled start) & # Added by ZeroScale' >> /jffs/scripts/post-mount; "
-               "  chmod 755 /jffs/scripts/post-mount; "
-               "fi");
+               "  echo '#!/bin/sh' > /jffs/scripts/post-mount 2>/dev/null; "
+               "  echo '(sleep 30 && /opt/etc/init.d/S06tailscaled start) & # Added by ZeroScale' >> /jffs/scripts/post-mount 2>/dev/null; "
+               "  chmod 755 /jffs/scripts/post-mount 2>/dev/null; "
+               "fi >/dev/null 2>&1");
     } else {
-        system("sed -i -e '/zeroscale/d' -e '/S06tailscaled/d' /jffs/scripts/post-mount 2>/dev/null");
+        system("if [ -f /jffs/scripts/post-mount ]; then sed -i -e '/zeroscale/d' -e '/S06tailscaled/d' /jffs/scripts/post-mount >/dev/null 2>&1; fi");
     }
     save_config();
     log_event("INFO", "Autostart on boot %s.", g_app.config.autostart ? "enabled" : "disabled");
     show_toast("Autostart on Boot: %s", g_app.config.autostart ? "Enabled" : "Disabled");
+    tb_invalidate();
 }
 
 void toggle_exitnode(void) {
     g_app.config.exitnode = !g_app.config.exitnode;
     save_config();
     log_event("INFO", "%s.", g_app.config.exitnode ? "Device configured as Exit Node" : "Exit Node configuration disabled");
-    show_toast("Advertise as Exit Node: %s", g_app.config.exitnode ? "Enabled" : "Disabled");
+    show_toast("Exit Node: %s (Press 'u' on Monitor to apply)", g_app.config.exitnode ? "Enabled" : "Disabled");
 }
 
 void toggle_advroutes(void) {
     g_app.config.advroutes = !g_app.config.advroutes;
     save_config();
     log_event("INFO", "Subnet Routes advertisement %s.", g_app.config.advroutes ? "enabled" : "disabled");
-    show_toast("Advertise Subnet Routes: %s (%s)", g_app.config.advroutes ? "Enabled" : "Disabled", g_app.config.routes);
+    show_toast("Subnet Routes: %s (Press 'u' on Monitor to apply)", g_app.config.advroutes ? "Enabled" : "Disabled");
 }
 
 static const int s_timer_steps[] = { 10, 30, 60, 120, 300 };
@@ -523,9 +525,17 @@ void cycle_amtm_email(void) {
 
 void cycle_schedule(void) {
     g_app.config.schedule = !g_app.config.schedule;
+    if (!g_app.mock_mode) {
+        if (g_app.config.schedule) {
+            system("cru a zeroscale_autoupdate '0 1 * * * /jffs/scripts/zeroscale --check-update >/dev/null 2>&1' >/dev/null 2>&1");
+        } else {
+            system("cru d zeroscale_autoupdate >/dev/null 2>&1");
+        }
+    }
     save_config();
     log_event("INFO", "Autoupdate schedule %s.", g_app.config.schedule ? "enabled @ 01:00" : "disabled");
     show_toast("Autoupdate Schedule: %s", g_app.config.schedule ? "Enabled @ 01:00" : "Disabled");
+    tb_invalidate();
 }
 
 void cycle_opmode(void) {

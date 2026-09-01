@@ -461,8 +461,10 @@ static void draw_unified_config_view(void) {
     int height = tb_height();
     AppConfig *cfg = &g_app.config;
     int cur = g_app.config_selected_idx;
+    int is_2col = (width >= 86);
     int is_compact = (width < 80);
 
+    // Header
     if (is_compact) {
         tb_printf(2, 1, TB_GREEN | TB_BOLD, 0, "ZeroScale Configuration");
         tb_printf(2, 2, TB_HI_BLACK, 0, "Manage services, routing, logs, and settings.");
@@ -474,125 +476,271 @@ static void draw_unified_config_view(void) {
         tb_printf(x, 3, TB_HI_BLACK, 0, "─");
     }
 
-    int vcol = is_compact ? 28 : 41;
-    int max_vlen = width - vcol - 2;
-    if (max_vlen < 6) max_vlen = 6;
+    if (is_2col) {
+        // =========================================================================
+        // 2-COLUMN CARD LAYOUT (Fits all 16 items in only 18 rows!)
+        // =========================================================================
+        int left_vcol = 26;
+        int center_x = 47;
+        int right_x = 49;
+        int right_vcol = 72;
+        int max_left_vlen = center_x - left_vcol - 1;
+        int max_right_vlen = width - right_vcol - 2;
+        if (max_right_vlen < 6) max_right_vlen = 6;
 
-    // Section 1: DAEMON & HEALTH MONITOR
-    tb_printf(2, 4, TB_WHITE | TB_BOLD, 0, is_compact ? "DAEMON & WATCHDOG" : "DAEMON & HEALTH MONITOR");
-
-    tb_printf(2, 5, (cur == 0) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 0) ? "▶" : " ");
-    tb_printf(4, 5, TB_GREEN | TB_BOLD, 0, "(1)");
-    tb_printf(7, 5, TB_WHITE, 0, is_compact ? " Watchdog Check      : " : " Keepalive Watchdog Check       : ");
-    if (cfg->keepalive) tb_printf(vcol, 5, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(vcol, 5, TB_HI_BLACK, 0, "Disabled");
-
-    tb_printf(2, 6, (cur == 1) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 1) ? "▶" : " ");
-    tb_printf(4, 6, TB_GREEN | TB_BOLD, 0, "(2)");
-    tb_printf(7, 6, TB_WHITE, 0, is_compact ? " Persistent Settings : " : " Keep Settings Persistent       : ");
-    if (cfg->persistentsettings) tb_printf(vcol, 6, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(vcol, 6, TB_HI_BLACK, 0, "Disabled");
-
-    tb_printf(2, 7, (cur == 2) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 2) ? "▶" : " ");
-    tb_printf(4, 7, TB_GREEN | TB_BOLD, 0, "(3)");
-    tb_printf(7, 7, TB_WHITE, 0, is_compact ? " Autostart on Boot   : " : " Autostart on Router Boot       : ");
-    if (cfg->autostart) tb_printf(vcol, 7, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(vcol, 7, TB_HI_BLACK, 0, "Disabled");
-
-    // Section 2: TAILSCALE ROUTING & SERVICE
-    tb_printf(2, 9, TB_WHITE | TB_BOLD, 0, is_compact ? "ROUTING & OPERATING MODE" : "TAILSCALE ROUTING & OPERATING MODE");
-
-    tb_printf(2, 10, (cur == 3) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 3) ? "▶" : " ");
-    tb_printf(4, 10, TB_GREEN | TB_BOLD, 0, "(4)");
-    tb_printf(7, 10, TB_WHITE, 0, is_compact ? " Operating Mode      : " : " Tailscale Operating Mode       : ");
-    if (strcasecmp(cfg->opmode, "Custom") == 0) {
-        if (strlen(cfg->customparams) > 0) {
-            tb_printf(vcol, 10, TB_MAGENTA | TB_BOLD, 0, "Custom (%.*s)", max_vlen - 9 > 4 ? max_vlen - 9 : 4, cfg->customparams);
-        } else {
-            tb_printf(vcol, 10, TB_MAGENTA | TB_BOLD, 0, "Custom Mode");
+        // Vertical Center Divider
+        for (int y = 4; y <= 17; y++) {
+            tb_printf(center_x, y, TB_HI_BLACK, 0, "│");
         }
-    } else if (strcasecmp(cfg->opmode, "Kernel") == 0) {
-        tb_printf(vcol, 10, TB_CYAN | TB_BOLD, 0, is_compact ? "Kernel Mode" : "Kernel (TUN) Mode");
+
+        // --- LEFT COLUMN ---
+        // Section 1: DAEMON & HEALTH
+        tb_printf(2, 4, TB_WHITE | TB_BOLD, 0, "DAEMON & HEALTH");
+
+        tb_printf(2, 5, (cur == 0) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 0) ? "▶" : " ");
+        tb_printf(4, 5, TB_GREEN | TB_BOLD, 0, "(1)");
+        tb_printf(7, 5, TB_WHITE, 0, " Watchdog Check : ");
+        if (cfg->keepalive) tb_printf(left_vcol, 5, TB_GREEN | TB_BOLD, 0, "Enabled");
+        else tb_printf(left_vcol, 5, TB_HI_BLACK, 0, "Disabled");
+
+        tb_printf(2, 6, (cur == 1) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 1) ? "▶" : " ");
+        tb_printf(4, 6, TB_GREEN | TB_BOLD, 0, "(2)");
+        tb_printf(7, 6, TB_WHITE, 0, " Persistent Conf: ");
+        if (cfg->persistentsettings) tb_printf(left_vcol, 6, TB_GREEN | TB_BOLD, 0, "Enabled");
+        else tb_printf(left_vcol, 6, TB_HI_BLACK, 0, "Disabled");
+
+        tb_printf(2, 7, (cur == 2) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 2) ? "▶" : " ");
+        tb_printf(4, 7, TB_GREEN | TB_BOLD, 0, "(3)");
+        tb_printf(7, 7, TB_WHITE, 0, " Autostart Boot : ");
+        if (cfg->autostart) tb_printf(left_vcol, 7, TB_GREEN | TB_BOLD, 0, "Enabled");
+        else tb_printf(left_vcol, 7, TB_HI_BLACK, 0, "Disabled");
+
+        // Section 2: ROUTING & OPERATING MODE
+        tb_printf(2, 9, TB_WHITE | TB_BOLD, 0, "ROUTING & OPERATING MODE");
+
+        tb_printf(2, 10, (cur == 3) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 3) ? "▶" : " ");
+        tb_printf(4, 10, TB_GREEN | TB_BOLD, 0, "(4)");
+        tb_printf(7, 10, TB_WHITE, 0, " Operating Mode : ");
+        if (strcasecmp(cfg->opmode, "Custom") == 0) {
+            if (strlen(cfg->customparams) > 0) {
+                tb_printf(left_vcol, 10, TB_MAGENTA | TB_BOLD, 0, "Custom (%.*s)", max_left_vlen - 9 > 4 ? max_left_vlen - 9 : 4, cfg->customparams);
+            } else {
+                tb_printf(left_vcol, 10, TB_MAGENTA | TB_BOLD, 0, "Custom");
+            }
+        } else if (strcasecmp(cfg->opmode, "Kernel") == 0) {
+            tb_printf(left_vcol, 10, TB_CYAN | TB_BOLD, 0, "Kernel (TUN)");
+        } else {
+            tb_printf(left_vcol, 10, TB_CYAN | TB_BOLD, 0, "Userspace");
+        }
+
+        tb_printf(2, 11, (cur == 4) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 4) ? "▶" : " ");
+        tb_printf(4, 11, TB_GREEN | TB_BOLD, 0, "(5)");
+        tb_printf(7, 11, TB_WHITE, 0, " Exit Node Mode : ");
+        if (cfg->exitnode) tb_printf(left_vcol, 11, TB_GREEN | TB_BOLD, 0, "Enabled");
+        else tb_printf(left_vcol, 11, TB_HI_BLACK, 0, "Disabled");
+
+        tb_printf(2, 12, (cur == 5) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 5) ? "▶" : " ");
+        tb_printf(4, 12, TB_GREEN | TB_BOLD, 0, "(6)");
+        tb_printf(7, 12, TB_WHITE, 0, " Subnet Routing : ");
+        if (cfg->advroutes) tb_printf(left_vcol, 12, TB_GREEN | TB_BOLD, 0, "Enabled");
+        else tb_printf(left_vcol, 12, TB_HI_BLACK, 0, "Disabled");
+
+        tb_printf(2, 13, (cur == 6) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 6) ? "▶" : " ");
+        tb_printf(4, 13, TB_GREEN | TB_BOLD, 0, "(7)");
+        tb_printf(7, 13, TB_WHITE, 0, " Subnet CIDR    : ");
+        if (strlen(cfg->routes) > 0) tb_printf(left_vcol, 13, TB_YELLOW | TB_BOLD, 0, "%.*s", max_left_vlen, cfg->routes);
+        else tb_printf(left_vcol, 13, TB_HI_BLACK, 0, "None");
+
+        // Section 3: INTERFACE & LOGGING
+        tb_printf(2, 15, TB_WHITE | TB_BOLD, 0, "INTERFACE & LOGGING");
+
+        tb_printf(2, 16, (cur == 7) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 7) ? "▶" : " ");
+        tb_printf(4, 16, TB_GREEN | TB_BOLD, 0, "(8)");
+        tb_printf(7, 16, TB_WHITE, 0, " Status Interval: ");
+        tb_printf(left_vcol, 16, TB_CYAN | TB_BOLD, 0, "%ds", cfg->timerloop);
+
+        tb_printf(2, 17, (cur == 8) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 8) ? "▶" : " ");
+        tb_printf(4, 17, TB_GREEN | TB_BOLD, 0, "(9)");
+        tb_printf(7, 17, TB_WHITE, 0, " Log Retention  : ");
+        if (cfg->logsize == 0) tb_printf(left_vcol, 17, TB_HI_BLACK, 0, "Disabled");
+        else tb_printf(left_vcol, 17, TB_CYAN | TB_BOLD, 0, "%d rows", cfg->logsize);
+
+        // --- RIGHT COLUMN ---
+        // Section 4: AUTOMATION & ALERTS
+        tb_printf(right_x, 4, TB_WHITE | TB_BOLD, 0, "AUTOMATION & ALERTS");
+
+        tb_printf(right_x, 5, (cur == 9) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 9) ? "▶" : " ");
+        tb_printf(right_x + 2, 5, TB_GREEN | TB_BOLD, 0, "(10)");
+        tb_printf(right_x + 6, 5, TB_WHITE, 0, " AMTM Alerts    : ");
+        if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(right_vcol, 5, TB_HI_BLACK, 0, "Disabled");
+        else if (!cfg->amtmemailsuccess && cfg->amtmemailfailure) tb_printf(right_vcol, 5, TB_GREEN | TB_BOLD, 0, "Failures (%d/h)", cfg->ratelimit);
+        else if (cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(right_vcol, 5, TB_GREEN | TB_BOLD, 0, "Success (%d/h)", cfg->ratelimit);
+        else tb_printf(right_vcol, 5, TB_GREEN | TB_BOLD, 0, "All (%d/h)", cfg->ratelimit);
+
+        tb_printf(right_x, 6, (cur == 10) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 10) ? "▶" : " ");
+        tb_printf(right_x + 2, 6, TB_GREEN | TB_BOLD, 0, "(11)");
+        tb_printf(right_x + 6, 6, TB_WHITE, 0, " Auto-Update    : ");
+        if (cfg->schedule) tb_printf(right_vcol, 6, TB_GREEN | TB_BOLD, 0, "@ %02d:%02d", cfg->schedulehrs, cfg->schedulemin);
+        else tb_printf(right_vcol, 6, TB_HI_BLACK, 0, "Disabled");
+
+        tb_printf(right_x, 7, (cur == 11) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 11) ? "▶" : " ");
+        tb_printf(right_x + 2, 7, TB_GREEN | TB_BOLD, 0, "(12)");
+        tb_printf(right_x + 6, 7, TB_WHITE, 0, " Release Track  : ");
+        if (cfg->track) tb_printf(right_vcol, 7, TB_YELLOW | TB_BOLD, 0, "Beta (Development)");
+        else tb_printf(right_vcol, 7, TB_CYAN | TB_BOLD, 0, "Stable (Official)");
+
+        // Section 5: BINARY & MAINTENANCE
+        tb_printf(right_x, 9, TB_WHITE | TB_BOLD, 0, "BINARY & MAINTENANCE");
+
+        tb_printf(right_x, 10, (cur == 12) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 12) ? "▶" : " ");
+        tb_printf(right_x + 2, 10, TB_GREEN | TB_BOLD, 0, "(13)");
+        tb_printf(right_x + 6, 10, TB_WHITE, 0, " Update TS      : ");
+        tb_printf(right_vcol, 10, TB_WHITE, 0, "Latest (v%s)", cfg->tsver);
+
+        tb_printf(right_x, 11, (cur == 13) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 13) ? "▶" : " ");
+        tb_printf(right_x + 2, 11, TB_GREEN | TB_BOLD, 0, "(14)");
+        tb_printf(right_x + 6, 11, TB_WHITE, 0, " Reset State    : ");
+        tb_printf(right_vcol, 11, TB_YELLOW | TB_BOLD, 0, "Clear State & Login");
+
+        tb_printf(right_x, 12, (cur == 14) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 14) ? "▶" : " ");
+        tb_printf(right_x + 2, 12, TB_GREEN | TB_BOLD, 0, "(15)");
+        tb_printf(right_x + 6, 12, TB_WHITE, 0, " Reinstall TS   : ");
+        tb_printf(right_vcol, 12, TB_CYAN | TB_BOLD, 0, "Run Installer");
+
+        tb_printf(right_x, 13, (cur == 15) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 15) ? "▶" : " ");
+        tb_printf(right_x + 2, 13, TB_GREEN | TB_BOLD, 0, "(16)");
+        tb_printf(right_x + 6, 13, TB_WHITE, 0, " Uninstall ZS   : ");
+        tb_printf(right_vcol, 13, TB_RED | TB_BOLD, 0, "Remove All");
+
+        // Section 6: QUICK TIPS & HELP
+        tb_printf(right_x, 15, TB_WHITE | TB_BOLD, 0, "TIPS & SHORTCUTS");
+        tb_printf(right_x + 2, 16, TB_HI_BLACK, 0, "• Apply Routes : Press 'u' on Monitor to push live");
+        tb_printf(right_x + 2, 17, TB_HI_BLACK, 0, "• Quick Toggle : Click any row or press number");
     } else {
-        tb_printf(vcol, 10, TB_CYAN | TB_BOLD, 0, "Userspace Mode");
+        // =========================================================================
+        // SINGLE-COLUMN SCROLLING VIEWPORT (For narrow terminals < 86 columns)
+        // =========================================================================
+        int vcol = is_compact ? 27 : 34;
+        int max_vlen = width - vcol - 2;
+        if (max_vlen < 6) max_vlen = 6;
+
+        int max_visible = height - 9;
+        if (max_visible < 5) max_visible = 5;
+        if (max_visible > 16) max_visible = 16;
+
+        if (cur < g_app.config_scroll) g_app.config_scroll = cur;
+        if (cur >= g_app.config_scroll + max_visible) g_app.config_scroll = cur - max_visible + 1;
+        if (g_app.config_scroll > 16 - max_visible) g_app.config_scroll = 16 - max_visible;
+        if (g_app.config_scroll < 0) g_app.config_scroll = 0;
+
+        if (g_app.config_scroll > 0) {
+            tb_printf(2, 4, TB_YELLOW, 0, "[▲ %d items above]", g_app.config_scroll);
+        } else {
+            tb_printf(2, 4, TB_HI_BLACK, 0, "CONFIGURATION ITEMS (1-16):");
+        }
+
+        for (int i = 0; i < max_visible; i++) {
+            int idx = g_app.config_scroll + i;
+            if (idx >= 16) break;
+            int y = 5 + i;
+
+            tb_printf(2, y, (cur == idx) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == idx) ? "▶" : " ");
+            tb_printf(4, y, TB_GREEN | TB_BOLD, 0, "(%d)", idx + 1);
+
+            int label_x = (idx + 1 >= 10) ? 9 : 8;
+
+            switch (idx) {
+                case 0:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Watchdog Check   : ");
+                    if (cfg->keepalive) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Enabled");
+                    else tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    break;
+                case 1:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Keep Settings    : ");
+                    if (cfg->persistentsettings) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Enabled");
+                    else tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    break;
+                case 2:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Autostart Boot   : ");
+                    if (cfg->autostart) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Enabled");
+                    else tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    break;
+                case 3:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Operating Mode   : ");
+                    if (strcasecmp(cfg->opmode, "Custom") == 0) {
+                        tb_printf(vcol, y, TB_MAGENTA | TB_BOLD, 0, "Custom");
+                    } else if (strcasecmp(cfg->opmode, "Kernel") == 0) {
+                        tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "Kernel");
+                    } else {
+                        tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "Userspace");
+                    }
+                    break;
+                case 4:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Exit Node Mode   : ");
+                    if (cfg->exitnode) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Enabled");
+                    else tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    break;
+                case 5:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Subnet Routing   : ");
+                    if (cfg->advroutes) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Enabled");
+                    else tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    break;
+                case 6:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Edit Subnet CIDR : ");
+                    if (strlen(cfg->routes) > 0) tb_printf(vcol, y, TB_YELLOW | TB_BOLD, 0, "%.*s", max_vlen, cfg->routes);
+                    else tb_printf(vcol, y, TB_HI_BLACK, 0, "None");
+                    break;
+                case 7:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Status Interval  : ");
+                    tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "%ds", cfg->timerloop);
+                    break;
+                case 8:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Log Retention    : ");
+                    if (cfg->logsize == 0) tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    else tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "%d rows", cfg->logsize);
+                    break;
+                case 9:
+                    tb_printf(label_x, y, TB_WHITE, 0, "AMTM Alerts      : ");
+                    if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    else if (!cfg->amtmemailsuccess && cfg->amtmemailfailure) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Failures");
+                    else if (cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "Success");
+                    else tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "All Alerts");
+                    break;
+                case 10:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Auto-Update      : ");
+                    if (cfg->schedule) tb_printf(vcol, y, TB_GREEN | TB_BOLD, 0, "@ %02d:%02d", cfg->schedulehrs, cfg->schedulemin);
+                    else tb_printf(vcol, y, TB_HI_BLACK, 0, "Disabled");
+                    break;
+                case 11:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Release Track    : ");
+                    if (cfg->track) tb_printf(vcol, y, TB_YELLOW | TB_BOLD, 0, "Beta");
+                    else tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "Stable");
+                    break;
+                case 12:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Update TS Binary : ");
+                    tb_printf(vcol, y, TB_WHITE, 0, "Latest");
+                    break;
+                case 13:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Reset State/Auth : ");
+                    tb_printf(vcol, y, TB_YELLOW | TB_BOLD, 0, "Clear & Login");
+                    break;
+                case 14:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Reinstall TS     : ");
+                    tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "Reinstall");
+                    break;
+                case 15:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Uninstall ZScale : ");
+                    tb_printf(vcol, y, TB_RED | TB_BOLD, 0, "Remove All");
+                    break;
+            }
+        }
+
+        if (g_app.config_scroll + max_visible < 16) {
+            tb_printf(2, 5 + max_visible, TB_YELLOW, 0, "[▼ %d items below]", 16 - (g_app.config_scroll + max_visible));
+        }
     }
 
-    tb_printf(2, 11, (cur == 4) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 4) ? "▶" : " ");
-    tb_printf(4, 11, TB_GREEN | TB_BOLD, 0, "(5)");
-    tb_printf(7, 11, TB_WHITE, 0, is_compact ? " Exit Node Mode      : " : " Advertise as Exit Node         : ");
-    if (cfg->exitnode) tb_printf(vcol, 11, TB_GREEN | TB_BOLD, 0, "Enabled");
-    else tb_printf(vcol, 11, TB_HI_BLACK, 0, "Disabled");
-
-    tb_printf(2, 12, (cur == 5) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 5) ? "▶" : " ");
-    tb_printf(4, 12, TB_GREEN | TB_BOLD, 0, "(6)");
-    tb_printf(7, 12, TB_WHITE, 0, is_compact ? " Subnet Routing      : " : " Advertise Subnet Routes        : ");
-    if (cfg->advroutes) {
-        if (strlen(cfg->routes) > 0) tb_printf(vcol, 12, TB_GREEN | TB_BOLD, 0, "Enabled (%.*s)", max_vlen - 10 > 4 ? max_vlen - 10 : 4, cfg->routes);
-        else tb_printf(vcol, 12, TB_GREEN | TB_BOLD, 0, "Enabled");
-    } else {
-        tb_printf(vcol, 12, TB_HI_BLACK, 0, "Disabled");
-    }
-
-    tb_printf(2, 13, (cur == 6) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 6) ? "▶" : " ");
-    tb_printf(4, 13, TB_GREEN | TB_BOLD, 0, "(7)");
-    tb_printf(7, 13, TB_WHITE, 0, is_compact ? " Edit Subnet CIDR    : " : " Edit Subnet Route CIDR         : ");
-    if (strlen(cfg->routes) > 0) tb_printf(vcol, 13, TB_YELLOW | TB_BOLD, 0, "%.*s", max_vlen, cfg->routes);
-    else tb_printf(vcol, 13, TB_HI_BLACK, 0, "None");
-
-    // Section 3: INTERFACE & LOGGING
-    tb_printf(2, 15, TB_WHITE | TB_BOLD, 0, "INTERFACE & LOGGING");
-
-    tb_printf(2, 16, (cur == 7) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 7) ? "▶" : " ");
-    tb_printf(4, 16, TB_GREEN | TB_BOLD, 0, "(8)");
-    tb_printf(7, 16, TB_WHITE, 0, is_compact ? " Status Interval     : " : " Status Check Interval          : ");
-    tb_printf(vcol, 16, TB_CYAN | TB_BOLD, 0, "%ds", cfg->timerloop);
-
-    tb_printf(2, 17, (cur == 8) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 8) ? "▶" : " ");
-    tb_printf(4, 17, TB_GREEN | TB_BOLD, 0, "(9)");
-    tb_printf(7, 17, TB_WHITE, 0, is_compact ? " Log Retention       : " : " Event Log Retention Max        : ");
-    if (cfg->logsize == 0) tb_printf(vcol, 17, TB_HI_BLACK, 0, "Disabled");
-    else tb_printf(vcol, 17, TB_CYAN | TB_BOLD, 0, "%d rows", cfg->logsize);
-
-    // Section 4: NOTIFICATIONS & AUTOMATION
-    tb_printf(2, 19, TB_WHITE | TB_BOLD, 0, "NOTIFICATIONS & AUTOMATION");
-
-    tb_printf(2, 20, (cur == 9) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 9) ? "▶" : " ");
-    tb_printf(4, 20, TB_GREEN | TB_BOLD, 0, "(10)");
-    tb_printf(is_compact ? 7 : 8, 20, TB_WHITE, 0, is_compact ? " AMTM Email Alerts   : " : " AMTM Email Notifications     : ");
-    if (!cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, 20, TB_HI_BLACK, 0, "Disabled");
-    else if (!cfg->amtmemailsuccess && cfg->amtmemailfailure) tb_printf(vcol, 20, TB_GREEN | TB_BOLD, 0, "Failures (RL: %d/h)", cfg->ratelimit);
-    else if (cfg->amtmemailsuccess && !cfg->amtmemailfailure) tb_printf(vcol, 20, TB_GREEN | TB_BOLD, 0, "Success (RL: %d/h)", cfg->ratelimit);
-    else tb_printf(vcol, 20, TB_GREEN | TB_BOLD, 0, is_compact ? "All (RL: %d/h)" : "Success & Failures (RL: %d/h)", cfg->ratelimit);
-
-    tb_printf(2, 21, (cur == 10) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 10) ? "▶" : " ");
-    tb_printf(4, 21, TB_GREEN | TB_BOLD, 0, "(11)");
-    tb_printf(is_compact ? 7 : 8, 21, TB_WHITE, 0, is_compact ? " Scheduled Autoupdate: " : " Scheduled Autoupdate Track   : ");
-    if (cfg->schedule) tb_printf(vcol, 21, TB_GREEN | TB_BOLD, 0, is_compact ? "@%02d:%02d (%s)" : "Enabled @ %02d:%02d (%s)", cfg->schedulehrs, cfg->schedulemin, cfg->track ? "Beta" : "Stable");
-    else tb_printf(vcol, 21, TB_HI_BLACK, 0, "Disabled");
-
-    // Section 5: BINARY, MAINTENANCE & INSTALLATION
-    tb_printf(2, 23, TB_WHITE | TB_BOLD, 0, is_compact ? "MAINTENANCE & UPDATES" : "BINARY MAINTENANCE & INSTALLATION");
-
-    tb_printf(2, 24, (cur == 11) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 11) ? "▶" : " ");
-    tb_printf(4, 24, TB_GREEN | TB_BOLD, 0, "(12)");
-    tb_printf(is_compact ? 7 : 8, 24, TB_WHITE, 0, is_compact ? " Update TS Binary    : " : " Update Tailscale Binary      : ");
-    tb_printf(vcol, 24, TB_WHITE, 0, is_compact ? "Latest (v%s)" : "Check & Update to Latest (v%s)", cfg->tsver);
-
-    tb_printf(2, 25, (cur == 12) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 12) ? "▶" : " ");
-    tb_printf(4, 25, TB_GREEN | TB_BOLD, 0, "(13)");
-    tb_printf(is_compact ? 7 : 8, 25, TB_WHITE, 0, is_compact ? " Reset State/Relogin : " : " Reset Daemon State / Re-login: ");
-    tb_printf(vcol, 25, TB_YELLOW | TB_BOLD, 0, is_compact ? "Clear & Reauth" : "Clear State & Re-authenticate");
-
-    tb_printf(2, 26, (cur == 13) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 13) ? "▶" : " ");
-    tb_printf(4, 26, TB_GREEN | TB_BOLD, 0, "(14)");
-    tb_printf(is_compact ? 7 : 8, 26, TB_WHITE, 0, is_compact ? " Reinstall Entware   : " : " Reinstall Entware Tailscale  : ");
-    tb_printf(vcol, 26, TB_CYAN | TB_BOLD, 0, is_compact ? "Run Installer" : "Run Entware Installer");
-
-    tb_printf(2, 27, (cur == 14) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 14) ? "▶" : " ");
-    tb_printf(4, 27, TB_GREEN | TB_BOLD, 0, "(15)");
-    tb_printf(is_compact ? 7 : 8, 27, TB_WHITE, 0, is_compact ? " Uninstall ZeroScale : " : " Uninstall ZeroScale          : ");
-    tb_printf(vcol, 27, TB_RED | TB_BOLD, 0, is_compact ? "Remove All" : "Complete Removal & Cleanup");
-
+    // Bottom Toast & Divider
     for (int x = 1; x < width - 1; x++) {
         tb_printf(x, height - 3, TB_HI_BLACK, 0, "─");
     }
@@ -602,9 +750,9 @@ static void draw_unified_config_view(void) {
     }
 
     if (is_compact) {
-        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓: Nav | Enter: Edit | 1-15: Select | Esc: Back ]");
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓: Nav | Enter: Toggle/Edit | Esc: Back ]");
     } else {
-        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓: Navigate | Enter: Toggle/Edit | Click row or press number | Esc/q: Back to Monitor ]");
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓/←/→: Navigate | Enter: Toggle/Edit | 1-16: Jump | Esc/q: Back to Monitor ]");
     }
 }
 

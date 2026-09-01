@@ -7,26 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.1] - 2026-08-31
+## [0.3.2] - 2026-09-01
 
-### 📱 Adaptive Mobile & Small-Screen Layout System
+### 🏛️ 2-Column Adaptive Configuration System & Hardware Automation
 
-ZeroScale `v0.3.1` delivers a comprehensive adaptive responsive design overhaul across the dashboard, peer table, configuration menu, and all modal dialogs for seamless operation on mobile SSH terminals and split-pane window layouts.
+ZeroScale `v0.3.2` introduces a completely revamped 2-column card configuration layout engineered to fit all 16 configuration options into 18 vertical lines (resolving 24-row terminal overflow), automated hardware crontab synchronization via `cru`, and dedicated release channel switching.
 
 #### 🌟 Added & Enhanced
-* **Concise State Badges on Small Screens:**
-  * Dynamically extracts concise key states (`Self`, `active`, `idle`, `exit node`, `offline`) from verbose Tailscale status strings when screen width is constrained (`width < 86`).
-  * Seamless 5-to-3 column responsive scaling without horizontal overflow or text wrapping.
-* **Responsive Configuration & Service Management View:**
-  * Dynamic value column alignment (shifts to column 28 on `< 80` cols) with concise label phrasing.
-  * Safe character truncation (`%.*s`) prevents long subnet CIDRs and custom flags from overflowing dialog borders.
-  * Adaptive compact navigation bar hint `[ ↑/↓: Nav | Enter: Edit | 1-15: Select | Esc: Back ]`.
-* **⏱️ Quick Live Refresh Timer Stepping (`+` / `-`):**
+* **🏛️ 2-Column Adaptive Card Layout (`width >= 86`):**
+  * Reorganized 16 configuration items across 6 structured card categories (Left: *Daemon & Health, Routing & Operating Mode, Interface & Logging*; Right: *Automation & Alerts, Binary & Maintenance, Tips & Shortcuts*).
+  * Reduced required vertical height from 28 lines down to **18 lines**, fitting cleanly inside standard 80×24 SSH terminals with zero clipping or text collision.
+  * Standardized all label widths (20 chars) and value columns (`left_vcol = 28`, `right_vcol = 72`) with bidirectional arrow navigation (`←/→/↑/↓`).
+* **📱 Viewport Auto-Scrolling for Compact Terminals (`width < 86`):**
+  * Dynamically centers active cursor selections on narrow viewports with top/bottom item overflow indicators (`[▲ more / ▼ more]`).
+* **⏰ Hardware Crontab Automation Sync (`cru`):**
+  * Toggling Auto-Update Cron (Option 11) now executes `cru a` and `cru d` directly on Asuswrt-Merlin so scheduled background checks persist in the router's hardware crontab.
+* **🎛️ Dedicated Release Track Switcher (Option 12):**
+  * Added direct toggle and shortcut (`t`) to switch between **Stable (Official)** and **Beta (Development)** update channels.
+* **⏱️ Quick Timer Loop Stepper (`+` / `-`):**
   * Step polling intervals instantly from the dashboard (`10s ↔ 30s ↔ 60s ↔ 120s ↔ 300s`) using `+`, `=`, `]` or `-`, `_`, `[`.
-  * Instantly saves configuration and displays a toast notification with the updated timer.
+* **⚡ Live Route Apply Reminders:**
+  * Instant toast reminders *(Press 'u' on Monitor to apply)* when changing subnet routes or exit node options.
+
+---
+
+## [0.3.1] - 2026-08-31
+
+### 📱 Per-Node Telemetry & Adaptive UI Systems
+
+ZeroScale `v0.3.1` delivers per-node data transfer telemetry, non-blocking latency testing, and small-screen badge compaction across mobile SSH terminals.
+
+#### 🌟 Added & Enhanced
 * **📊 Per-Node Rx/Tx Traffic Metrics & Activity Tracking:**
   * Added dedicated `Traffic (Tx/Rx)` (`▲ Tx │ ▼ Rx`) and `Last Activity` statistics to the Peer Node Inspector modal (`Enter` / click).
   * Automatically extracts real-time transfer throughput and timestamps from Tailscale engine telemetry.
+* **⚡ Non-Blocking Ping Bug Fix:**
+  * Enforced strict 1-second timeouts on both ICMP (`ping -c 1 -W 1`) and WireGuard (`tailscale ping --timeout=1s -c 1`).
+  * Repaints UI immediately before ping execution, parsing and displaying live latency directly in toast notifications without freezing the TUI.
+* **Concise State Badges on Small Screens:**
+  * Dynamically extracts concise key states (`Self`, `active`, `idle`, `exit node`, `offline`) from verbose Tailscale status strings when screen width is constrained (`width < 86`).
 * **Adaptive Action Modals & Dialogs:**
   * **Peer Inspector Modal:** Responsive modal width (`box_w`), adapted 11/15-col label widths, shortened button labels (`[Ping] [TS Ping] [Close]`), and updated mouse hitbox handlers.
   * **Input & Confirmation Dialogs:** Dynamically bounded width (`box_w`) and single-line responsive button alignment.
