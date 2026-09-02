@@ -196,6 +196,8 @@ void switch_track(void);
 
 void install_zeroscale(void);
 void uninstall_zeroscale(void);
+void update_zeroscale(void);
+void check_and_prompt_zeroscale_update(void);
 void build_tailscale_up_cmd(char *buf, size_t maxlen);
 int send_amtm_email(const char *subject, const char *body);
 int run_headless_update(void);

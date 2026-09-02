@@ -9,7 +9,7 @@ set -e
 export PATH="/opt/bin:/opt/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PATH:-}"
 
 REPO_RAW_URL="https://raw.githubusercontent.com/underd0se/ZeroScale/main"
-VERSION="v0.3.4"
+VERSION="v0.3.5"
 INSTALL_DIR="/jffs/scripts"
 TARGET_BIN="${INSTALL_DIR}/zeroscale"
 CONFIG_DIR="/jffs/addons/zeroscale.d"
@@ -23,6 +23,14 @@ C_GREEN="\033[1;32m"
 C_CYAN="\033[1;36m"
 C_YELLOW="\033[1;33m"
 C_RED="\033[1;31m"
+
+for arg in "$@"; do
+    case "$arg" in
+        --silent|-s)
+            exec >/dev/null 2>&1
+            ;;
+    esac
+done
 
 printf "\n%b" "${C_GREEN}"
 cat <<'EOF'

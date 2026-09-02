@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.5] - 2026-09-02
+
+### 🔄 Dedicated ZeroScale Self-Update & 17-Item Configuration Menu
+
+ZeroScale `v0.3.5` adds a dedicated manual self-update action to the TUI interface, expands the unified configuration system to 17 items with seamless hotkey jumping, and supports automatic in-place binary relaunch.
+
+#### 🌟 Added & Enhanced
+* **🔄 Dedicated ZeroScale Self-Update Action (Option 13):**
+  * Added dedicated manual self-update action under Section 5 (Binary & Maintenance).
+  * Automatically respects the active release track (`Stable` or `Beta`), pulls the latest release over HTTPS, shows progress splash feedback, and seamlessly relaunches ZeroScale in-place with `exec`.
+* **⚙️ Expanded 17-Item Adaptive Configuration System:**
+  * Expanded menu items from 16 to 17 while preserving the strict **18-row compact limit** in 2-column mode.
+  * Added `(13) Update ZScale` (hotkey `z`) alongside `(14) Update TS` (hotkey `u`), `(15) Reset State` (hotkey `x`), `(16) Reinstall TS` (hotkey `i`), and `(17) Uninstall ZS`.
+  * Updated multi-digit jump parser (`1` followed by `0`-`7` for options `(10)` through `(17)`).
+* **🖱️ Mouse & Viewport Navigation Support:**
+  * Added full mouse click coordination and single-column scrolling viewport support for all 17 configuration options.
+
+---
+
 ## [0.3.4] - 2026-09-01
 
 ### 🚦 Email Rate Limiting & Clean Process Uninstaller

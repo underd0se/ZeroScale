@@ -595,28 +595,32 @@ static void draw_unified_config_view(void) {
 
         tb_printf(right_x, 10, (cur == 12) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 12) ? "▶" : " ");
         tb_printf(right_x + 2, 10, TB_GREEN | TB_BOLD, 0, "(13)");
-        tb_printf(right_x + 6, 10, TB_WHITE, 0, " Update TS      : ");
-        tb_printf(right_vcol, 10, TB_WHITE, 0, "Latest (v%s)", cfg->tsver);
+        tb_printf(right_x + 6, 10, TB_WHITE, 0, " Update ZScale  : ");
+        tb_printf(right_vcol, 10, TB_CYAN | TB_BOLD, 0, "Check / Upgrade");
 
         tb_printf(right_x, 11, (cur == 13) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 13) ? "▶" : " ");
         tb_printf(right_x + 2, 11, TB_GREEN | TB_BOLD, 0, "(14)");
-        tb_printf(right_x + 6, 11, TB_WHITE, 0, " Reset State    : ");
-        tb_printf(right_vcol, 11, TB_YELLOW | TB_BOLD, 0, "Clear State & Login");
+        tb_printf(right_x + 6, 11, TB_WHITE, 0, " Update TS      : ");
+        tb_printf(right_vcol, 11, TB_WHITE, 0, "Latest (v%s)", cfg->tsver);
 
         tb_printf(right_x, 12, (cur == 14) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 14) ? "▶" : " ");
         tb_printf(right_x + 2, 12, TB_GREEN | TB_BOLD, 0, "(15)");
-        tb_printf(right_x + 6, 12, TB_WHITE, 0, " Reinstall TS   : ");
-        tb_printf(right_vcol, 12, TB_CYAN | TB_BOLD, 0, "Run Installer");
+        tb_printf(right_x + 6, 12, TB_WHITE, 0, " Reset State    : ");
+        tb_printf(right_vcol, 12, TB_YELLOW | TB_BOLD, 0, "Clear State & Login");
 
         tb_printf(right_x, 13, (cur == 15) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 15) ? "▶" : " ");
         tb_printf(right_x + 2, 13, TB_GREEN | TB_BOLD, 0, "(16)");
-        tb_printf(right_x + 6, 13, TB_WHITE, 0, " Uninstall ZS   : ");
-        tb_printf(right_vcol, 13, TB_RED | TB_BOLD, 0, "Remove All");
+        tb_printf(right_x + 6, 13, TB_WHITE, 0, " Reinstall TS   : ");
+        tb_printf(right_vcol, 13, TB_CYAN | TB_BOLD, 0, "Run Installer");
+
+        tb_printf(right_x, 14, (cur == 16) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == 16) ? "▶" : " ");
+        tb_printf(right_x + 2, 14, TB_GREEN | TB_BOLD, 0, "(17)");
+        tb_printf(right_x + 6, 14, TB_WHITE, 0, " Uninstall ZS   : ");
+        tb_printf(right_vcol, 14, TB_RED | TB_BOLD, 0, "Remove All");
 
         // Section 6: QUICK TIPS & HELP
-        tb_printf(right_x, 15, TB_WHITE | TB_BOLD, 0, "TIPS & SHORTCUTS");
-        tb_printf(right_x + 2, 16, TB_HI_BLACK, 0, "• Apply Routes : Press 'u' on Monitor to push live");
-        tb_printf(right_x + 2, 17, TB_HI_BLACK, 0, "• Quick Toggle : Click any row or press number");
+        tb_printf(right_x, 16, TB_WHITE | TB_BOLD, 0, "TIPS & SHORTCUTS");
+        tb_printf(right_x + 2, 17, TB_HI_BLACK, 0, "• Quick Toggle : Click any row or press 1-17");
     } else {
         // =========================================================================
         // SINGLE-COLUMN SCROLLING VIEWPORT (For narrow terminals < 86 columns)
@@ -627,22 +631,22 @@ static void draw_unified_config_view(void) {
 
         int max_visible = height - 9;
         if (max_visible < 5) max_visible = 5;
-        if (max_visible > 16) max_visible = 16;
+        if (max_visible > 17) max_visible = 17;
 
         if (cur < g_app.config_scroll) g_app.config_scroll = cur;
         if (cur >= g_app.config_scroll + max_visible) g_app.config_scroll = cur - max_visible + 1;
-        if (g_app.config_scroll > 16 - max_visible) g_app.config_scroll = 16 - max_visible;
+        if (g_app.config_scroll > 17 - max_visible) g_app.config_scroll = 17 - max_visible;
         if (g_app.config_scroll < 0) g_app.config_scroll = 0;
 
         if (g_app.config_scroll > 0) {
             tb_printf(2, 4, TB_YELLOW, 0, "[▲ %d items above]", g_app.config_scroll);
         } else {
-            tb_printf(2, 4, TB_HI_BLACK, 0, "CONFIGURATION ITEMS (1-16):");
+            tb_printf(2, 4, TB_HI_BLACK, 0, "CONFIGURATION ITEMS (1-17):");
         }
 
         for (int i = 0; i < max_visible; i++) {
             int idx = g_app.config_scroll + i;
-            if (idx >= 16) break;
+            if (idx >= 17) break;
             int y = 5 + i;
 
             tb_printf(2, y, (cur == idx) ? (TB_CYAN | TB_BOLD) : TB_WHITE, 0, (cur == idx) ? "▶" : " ");
@@ -719,26 +723,30 @@ static void draw_unified_config_view(void) {
                     else tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "Stable");
                     break;
                 case 12:
+                    tb_printf(label_x, y, TB_WHITE, 0, "Update ZScale    : ");
+                    tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "Check / Upgrade");
+                    break;
+                case 13:
                     tb_printf(label_x, y, TB_WHITE, 0, "Update TS Binary : ");
                     tb_printf(vcol, y, TB_WHITE, 0, "Latest");
                     break;
-                case 13:
+                case 14:
                     tb_printf(label_x, y, TB_WHITE, 0, "Reset State/Auth : ");
                     tb_printf(vcol, y, TB_YELLOW | TB_BOLD, 0, "Clear & Login");
                     break;
-                case 14:
+                case 15:
                     tb_printf(label_x, y, TB_WHITE, 0, "Reinstall TS     : ");
                     tb_printf(vcol, y, TB_CYAN | TB_BOLD, 0, "Reinstall");
                     break;
-                case 15:
+                case 16:
                     tb_printf(label_x, y, TB_WHITE, 0, "Uninstall ZScale : ");
                     tb_printf(vcol, y, TB_RED | TB_BOLD, 0, "Remove All");
                     break;
             }
         }
 
-        if (g_app.config_scroll + max_visible < 16) {
-            tb_printf(2, 5 + max_visible, TB_YELLOW, 0, "[▼ %d items below]", 16 - (g_app.config_scroll + max_visible));
+        if (g_app.config_scroll + max_visible < 17) {
+            tb_printf(2, 5 + max_visible, TB_YELLOW, 0, "[▼ %d items below]", 17 - (g_app.config_scroll + max_visible));
         }
     }
 
@@ -754,7 +762,7 @@ static void draw_unified_config_view(void) {
     if (is_compact) {
         tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓: Nav | Enter: Toggle/Edit | Esc: Back ]");
     } else {
-        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓/←/→: Navigate | Enter: Toggle/Edit | 1-16: Jump | Esc/q: Back to Monitor ]");
+        tb_printf(2, height - 2, TB_WHITE, 0, "[ ↑/↓/←/→: Navigate | Enter: Toggle/Edit | 1-17: Jump | Esc/q: Back to Monitor ]");
     }
 }
 
@@ -922,32 +930,55 @@ static void draw_confirm_dialog(void) {
     int width = tb_width();
     int height = tb_height();
 
-    int box_w = (width >= 70) ? 62 : (width - 4);
+    int line_count = 1;
+    for (const char *p = g_app.confirm_prompt; *p; p++) {
+        if (*p == '\n') line_count++;
+    }
+
+    int box_w = (width >= 72) ? 66 : (width - 4);
     if (box_w < 38) box_w = width - 2;
-    int box_h = 8;
+    int box_h = 6 + line_count;
+    if (box_h < 8) box_h = 8;
     int start_x = (width - box_w) / 2;
     int start_y = (height - box_h) / 2;
 
     const char *action_lbl = (strlen(g_app.confirm_action_label) > 0) ? g_app.confirm_action_label : "Confirm";
     int is_destructive = (strstr(action_lbl, "Uninstall") || strstr(action_lbl, "Stop") || strstr(action_lbl, "Reset") || strstr(action_lbl, "Disconnect")) ? 1 : 0;
+    int is_update = (strstr(action_lbl, "Update") || strstr(action_lbl, "Reinstall")) ? 1 : 0;
 
-    draw_modal_box(start_x, start_y, box_w, box_h, "CONFIRMATION REQUIRED", is_destructive ? (TB_RED | TB_BOLD) : (TB_YELLOW | TB_BOLD), TB_HI_BLACK);
+    uint32_t title_color = is_destructive ? (TB_RED | TB_BOLD) : (is_update ? (TB_CYAN | TB_BOLD) : (TB_YELLOW | TB_BOLD));
+    const char *title_text = is_update ? "SOFTWARE UPDATE / REINSTALL" : "CONFIRMATION REQUIRED";
 
-    tb_printf(start_x + 3, start_y + 2, TB_WHITE | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 6, g_app.confirm_prompt);
-    if (box_w < 50) {
-        tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Tab: Select | Enter: Run");
-    } else {
-        tb_printf(start_x + 3, start_y + 3, TB_WHITE | TB_DIM, TB_HI_BLACK, "Use ←/→ or Tab to select, Enter to execute.");
+    draw_modal_box(start_x, start_y, box_w, box_h, title_text, title_color, TB_HI_BLACK);
+
+    char temp_prompt[512];
+    snprintf(temp_prompt, sizeof(temp_prompt), "%s", g_app.confirm_prompt);
+    char *saveptr = NULL;
+    char *line = strtok_r(temp_prompt, "\n", &saveptr);
+    int line_idx = 0;
+    while (line) {
+        if (strstr(line, "Current Version")) {
+            tb_printf(start_x + 3, start_y + 2 + line_idx, TB_WHITE, TB_HI_BLACK, "%.*s", box_w - 6, line);
+        } else if (strstr(line, "Remote Version")) {
+            tb_printf(start_x + 3, start_y + 2 + line_idx, TB_GREEN | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 6, line);
+        } else if (strstr(line, "A newer version") || strstr(line, "already on the latest")) {
+            tb_printf(start_x + 3, start_y + 2 + line_idx, TB_YELLOW | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 6, line);
+        } else {
+            tb_printf(start_x + 3, start_y + 2 + line_idx, TB_WHITE | TB_BOLD, TB_HI_BLACK, "%.*s", box_w - 6, line);
+        }
+        line = strtok_r(NULL, "\n", &saveptr);
+        line_idx++;
     }
 
+    int btn_y = start_y + 2 + line_count + 1;
     int act_len = (int)strlen(action_lbl) + 2;
     int btn0_x = start_x + 3;
     int btn1_x = btn0_x + act_len + 3;
 
-    draw_modal_btn(btn0_x, start_y + 5, action_lbl, (g_app.confirm_selected_btn == 0), 1, is_destructive);
-    draw_modal_btn(btn1_x, start_y + 5, "Cancel", (g_app.confirm_selected_btn == 1), 0, 0);
+    draw_modal_btn(btn0_x, btn_y, action_lbl, (g_app.confirm_selected_btn == 0), 1, is_destructive);
+    draw_modal_btn(btn1_x, btn_y, "Cancel", (g_app.confirm_selected_btn == 1), 0, 0);
 
-    tb_set_cell(start_x + box_w - 1, start_y + 5, 0x2502 /* │ */, is_destructive ? (TB_RED | TB_BOLD) : (TB_YELLOW | TB_BOLD), TB_HI_BLACK);
+    tb_set_cell(start_x + box_w - 1, btn_y, 0x2502 /* │ */, title_color, TB_HI_BLACK);
 }
 
 void ui_draw(void) {

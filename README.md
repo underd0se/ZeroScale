@@ -127,9 +127,9 @@ cd ZeroScale
 | **Dashboard** | `u` / `d` | Quick direct shortcut for Tailscale `up` / `down` |
 | **Dashboard** | `r` / `s` / `t` | Quick direct shortcut for daemon restart / start / stop |
 | **Dashboard** | `c` / `l` / `q` | Open Configuration / Logs / Quit |
-| **Config Menu** | `↑` / `↓` / `←` / `→` | Navigate through all 16 configuration items in 2-column layout |
+| **Config Menu** | `↑` / `↓` / `←` / `→` | Navigate through all 17 configuration items in 2-column layout |
 | **Config Menu** | `Enter` / `Space` | Toggle setting / Open Subnet CIDR editor / Edit Log retention / Edit Auto-Update Time |
-| **Config Menu** | `1`–`9`, `t`, `u`, `x`, `i` | Direct jump and toggle hotkeys |
+| **Config Menu** | `1`–`9`, `t`, `z`, `u`, `x`, `i` | Direct jump and toggle hotkeys (`z`: Update ZScale, `u`: Update TS) |
 | **Config Menu** | `Esc` / `e` / `q` | Return to Dashboard |
 | **Modals & Dialogs** | `←` / `→` / `Tab` | Switch between Action and Cancel buttons |
 | **Modals & Dialogs** | `Enter` / `Space` | Execute focused modal action |

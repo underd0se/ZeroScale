@@ -194,6 +194,87 @@ void install_zeroscale(void) {
     printf("\n[+] Entware Tailscale Installation Complete.\n\n");
 }
 
+void check_and_prompt_zeroscale_update(void) {
+    AppConfig *cfg = &g_app.config;
+    const char *branch = cfg->track ? "beta" : "main";
+    const char *track_name = cfg->track ? "Beta (Development)" : "Stable (Official)";
+
+    char remote_ver[32] = {0};
+    if (g_app.mock_mode) {
+        snprintf(remote_ver, sizeof(remote_ver), "v0.3.5");
+    } else {
+        char cmd[256];
+        snprintf(cmd, sizeof(cmd),
+                 "curl -fsSL --connect-timeout 4 https://raw.githubusercontent.com/underd0se/ZeroScale/%s/install.sh 2>/dev/null | grep -E '^VERSION=' | head -n 1 | cut -d'\"' -f2",
+                 branch);
+        FILE *f = popen(cmd, "r");
+        if (f) {
+            if (fgets(remote_ver, sizeof(remote_ver), f)) {
+                remote_ver[strcspn(remote_ver, "\r\n")] = 0;
+            }
+            pclose(f);
+        }
+    }
+
+    const char *remote_cmp = remote_ver;
+    if (*remote_cmp == 'v' || *remote_cmp == 'V') remote_cmp++;
+
+    const char *local_cmp = cfg->version;
+    if (*local_cmp == 'v' || *local_cmp == 'V') local_cmp++;
+
+    char prompt[512];
+    if (strlen(remote_ver) == 0) {
+        snprintf(prompt, sizeof(prompt),
+                 "Current Version : v%s (Track: %s)\n"
+                 "Remote Version  : [Failed to check network]\n\n"
+                 "Do you want to attempt updating anyway?",
+                 cfg->version, track_name);
+        request_confirm(prompt, "Force Update", "INTERNAL_UPDATE_ZEROSCALE");
+    } else if (strcmp(remote_cmp, local_cmp) == 0) {
+        snprintf(prompt, sizeof(prompt),
+                 "Current Version : v%s (%s)\n"
+                 "Remote Version  : %s (Track: %s)\n\n"
+                 "You are already on the latest version.\n"
+                 "Do you want to force reinstall / update?",
+                 cfg->version, track_name, remote_ver, branch);
+        request_confirm(prompt, "Reinstall", "INTERNAL_UPDATE_ZEROSCALE");
+    } else {
+        snprintf(prompt, sizeof(prompt),
+                 "Current Version : v%s\n"
+                 "Remote Version  : %s\n"
+                 "Release Track   : %s\n\n"
+                 "A newer version is available on GitHub!\n"
+                 "Do you want to download and install this update now?",
+                 cfg->version, remote_ver, track_name);
+        request_confirm(prompt, "Update Now", "INTERNAL_UPDATE_ZEROSCALE");
+    }
+}
+
+void update_zeroscale(void) {
+    show_splash("UPDATING ZEROSCALE...", 500, TB_CYAN | TB_BOLD);
+    const char *branch = g_app.config.track ? "beta" : "main";
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd),
+             "curl -fsSL https://raw.githubusercontent.com/underd0se/ZeroScale/%s/install.sh | sh -s -- --silent >/dev/null 2>&1",
+             branch);
+    log_event("INFO", "Manual ZeroScale update triggered (Track: %s).", g_app.config.track ? "Beta" : "Stable");
+    int res = system(cmd);
+    if (res == 0) {
+        show_splash("UPDATE COMPLETE - RESTARTING...", 500, TB_GREEN | TB_BOLD);
+        tb_shutdown();
+        printf("\n[+] ZeroScale successfully updated to latest release on '%s' track!\n", branch);
+        printf("[*] Relaunching ZeroScale...\n\n");
+        fflush(stdout);
+        execl("/jffs/scripts/zeroscale", "zeroscale", (char *)NULL);
+        exit(0);
+    } else {
+        show_toast("Update failed! Check internet connection.");
+        log_event("FAIL", "ZeroScale update failed (curl error code %d).", res);
+        g_app.mode = VIEW_CONFIG;
+        tb_invalidate();
+    }
+}
+
 void uninstall_zeroscale(void) {
     show_splash("UNINSTALLING ZEROSCALE...", 600, TB_RED | TB_BOLD);
     system("/opt/etc/init.d/S06tailscaled stop 2>/dev/null; "
@@ -508,21 +589,24 @@ static void trigger_config_action(int idx) {
         }
         case 11: switch_track(); break;
         case 12:
-            request_confirm("Update Tailscale binary to latest version?",
-                            "Update",
-                            "/opt/bin/opkg update && /opt/bin/opkg upgrade tailscale || tailscale update --yes; /opt/etc/init.d/S06tailscaled restart");
+            check_and_prompt_zeroscale_update();
             break;
         case 13:
+            request_confirm("Update Tailscale binary to latest version?",
+                            "Update TS",
+                            "/opt/bin/opkg update && /opt/bin/opkg upgrade tailscale || tailscale update --yes; /opt/etc/init.d/S06tailscaled restart");
+            break;
+        case 14:
             request_confirm("Reset daemon state and re-authenticate?",
                             "Reset State",
                             "/opt/etc/init.d/S06tailscaled stop; rm -f /opt/var/tailscaled.state; /opt/etc/init.d/S06tailscaled start");
             break;
-        case 14:
+        case 15:
             request_confirm("Reinstall Entware Tailscale package?",
-                            "Reinstall",
+                            "Reinstall TS",
                             "/opt/etc/init.d/S06tailscaled stop 2>/dev/null; /opt/bin/opkg update; /opt/bin/opkg install --force-reinstall tailscale; /opt/etc/init.d/S06tailscaled start");
             break;
-        case 15:
+        case 16:
             request_confirm("Completely uninstall ZeroScale from router?",
                             "Uninstall",
                             "INTERNAL_UNINSTALL");
@@ -546,9 +630,9 @@ static void handle_config_key(struct tb_event *ev) {
 
     if (s_config_pending_digit == 1) {
         s_config_pending_digit = 0;
-        if (ev->ch >= '0' && ev->ch <= '6') {
+        if (ev->ch >= '0' && ev->ch <= '7') {
             int num = 10 + (ev->ch - '0');
-            if (num >= 10 && num <= 16) {
+            if (num >= 10 && num <= 17) {
                 trigger_config_action(num - 1);
                 return;
             }
@@ -561,13 +645,13 @@ static void handle_config_key(struct tb_event *ev) {
     }
 
     if (ev->key == TB_KEY_ARROW_DOWN) {
-        if (g_app.config_selected_idx < 15) g_app.config_selected_idx++;
+        if (g_app.config_selected_idx < 16) g_app.config_selected_idx++;
     } else if (ev->key == TB_KEY_ARROW_UP) {
         if (g_app.config_selected_idx > 0) g_app.config_selected_idx--;
     } else if (is_2col && ev->key == TB_KEY_ARROW_RIGHT) {
         if (g_app.config_selected_idx < 9) {
             g_app.config_selected_idx += 9;
-            if (g_app.config_selected_idx > 15) g_app.config_selected_idx = 15;
+            if (g_app.config_selected_idx > 16) g_app.config_selected_idx = 16;
         }
     } else if (is_2col && ev->key == TB_KEY_ARROW_LEFT) {
         if (g_app.config_selected_idx >= 9) {
@@ -591,7 +675,7 @@ static void handle_config_key(struct tb_event *ev) {
         s_config_pending_digit = 1;
         s_config_digit_time = time(NULL);
         g_app.config_selected_idx = 0;
-        show_toast("Option (1)... [Press 0-6 for (10)-(16), or Enter for (1)]");
+        show_toast("Option (1)... [Press 0-7 for (10)-(17), or Enter for (1)]");
     } else if (ev->ch == '4') {
         if (strcasecmp(g_app.config.opmode, "Custom") == 0) {
             request_input(INPUT_CUSTOMPARAMS, "Custom Tailscale Flags", "Enter custom tailscale up flags (e.g. --accept-routes)", g_app.config.customparams);
@@ -602,12 +686,14 @@ static void handle_config_key(struct tb_event *ev) {
         trigger_config_action(ev->ch - '1');
     } else if (ev->ch == 't' || ev->ch == 'T') {
         trigger_config_action(11);
-    } else if (ev->ch == 'u' || ev->ch == 'U') {
+    } else if (ev->ch == 'z' || ev->ch == 'Z') {
         trigger_config_action(12);
-    } else if (ev->ch == 'x' || ev->ch == 'X') {
+    } else if (ev->ch == 'u' || ev->ch == 'U') {
         trigger_config_action(13);
-    } else if (ev->ch == 'i' || ev->ch == 'I') {
+    } else if (ev->ch == 'x' || ev->ch == 'X') {
         trigger_config_action(14);
+    } else if (ev->ch == 'i' || ev->ch == 'I') {
+        trigger_config_action(15);
     }
 }
 
@@ -632,7 +718,7 @@ static void handle_config_mouse(struct tb_event *ev) {
                     default: break;
                 }
             } else {
-                // Right Column (Options 9..15)
+                // Right Column (Options 9..16)
                 switch (ev->y) {
                     case 5: trigger_config_action(9); break;
                     case 6: trigger_config_action(10); break;
@@ -641,6 +727,7 @@ static void handle_config_mouse(struct tb_event *ev) {
                     case 11: trigger_config_action(13); break;
                     case 12: trigger_config_action(14); break;
                     case 13: trigger_config_action(15); break;
+                    case 14: trigger_config_action(16); break;
                     default: break;
                 }
             }
@@ -648,11 +735,11 @@ static void handle_config_mouse(struct tb_event *ev) {
             // Single Column Scrolled Viewport
             int max_visible = height - 9;
             if (max_visible < 5) max_visible = 5;
-            if (max_visible > 16) max_visible = 16;
+            if (max_visible > 17) max_visible = 17;
 
             if (ev->y >= 5 && ev->y < 5 + max_visible) {
                 int clicked_idx = g_app.config_scroll + (ev->y - 5);
-                if (clicked_idx >= 0 && clicked_idx < 16) {
+                if (clicked_idx >= 0 && clicked_idx < 17) {
                     trigger_config_action(clicked_idx);
                 }
             }
@@ -1056,6 +1143,10 @@ static void handle_input_mouse(struct tb_event *ev) {
 // View: Confirm Dialog Handlers
 
 static void execute_confirm_action(void) {
+    if (strcmp(g_app.confirm_cmd, "INTERNAL_UPDATE_ZEROSCALE") == 0) {
+        update_zeroscale();
+        return;
+    }
     if (strcmp(g_app.confirm_cmd, "INTERNAL_UNINSTALL") == 0) {
         uninstall_zeroscale();
         return;
@@ -1093,9 +1184,16 @@ static void handle_confirm_mouse(struct tb_event *ev) {
     if (ev->key == TB_KEY_MOUSE_LEFT) {
         int width = tb_width();
         int height = tb_height();
-        int box_w = (width >= 70) ? 62 : (width - 4);
+
+        int line_count = 1;
+        for (const char *p = g_app.confirm_prompt; *p; p++) {
+            if (*p == '\n') line_count++;
+        }
+
+        int box_w = (width >= 72) ? 66 : (width - 4);
         if (box_w < 38) box_w = width - 2;
-        int box_h = 8;
+        int box_h = 6 + line_count;
+        if (box_h < 8) box_h = 8;
         int start_x = (width - box_w) / 2;
         int start_y = (height - box_h) / 2;
 
@@ -1103,8 +1201,9 @@ static void handle_confirm_mouse(struct tb_event *ev) {
         int act_len = (int)strlen(action_lbl) + 2;
         int btn0_x = start_x + 3;
         int btn1_x = btn0_x + act_len + 3;
+        int btn_y = start_y + 2 + line_count + 1;
 
-        if (ev->y == start_y + 5) {
+        if (ev->y == btn_y) {
             if (ev->x >= btn0_x && ev->x < btn0_x + act_len + 2) {
                 g_app.confirm_selected_btn = 0;
                 execute_confirm_action();
@@ -1167,7 +1266,7 @@ int main(int argc, char *argv[]) {
             uninstall_zeroscale();
             return 0;
         } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-            printf("ZeroScale v0.3.4\n");
+            printf("ZeroScale v0.3.5\n");
             printf("Usage: zeroscale [options]\n\n");
             printf("Options:\n");
             printf("  -c, --check-update Run headless background update check (crontab mode)\n");
